@@ -1,0 +1,8 @@
+chatCompletion:
+  provider: zhipuai
+  model: glm-4
+  apiKey: 99b6167d7f421fc2187785503d2ffe9f.WncREpjXE26ediTw
+  contextLength: 131072
+  maxToken: 8192
+  concurrencyLimit: 5
+  waitReponseTimeout: 30000

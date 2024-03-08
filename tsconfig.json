@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+      "baseUrl": ".",
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext",
+      "allowImportingTsExtensions": true,
+      "allowSyntheticDefaultImports": true,
+      "noEmit": true,
+      "paths": {
+        "@/*": ["src/*"]
+      },
+      "outDir": "./dist"
+    },
+    "include": ["src/**/*", "libs.d.ts"],
+    "exclude": ["node_modules", "dist"]
+}
