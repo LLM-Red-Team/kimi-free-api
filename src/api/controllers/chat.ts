@@ -9,12 +9,20 @@ import logger from '@/lib/logger.ts';
 import util from '@/lib/util.ts';
 
 const ACCESS_TOKEN_EXPIRES = 300;
+const FAKE_HEADERS = {
+  'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+  'Sec-Ch-Ua-Mobile': '?0',
+  'Sec-Ch-Ua-Platform': '"Windows"',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+};
 const accessTokenMap = new Map();
 
 async function requestToken(refreshToken: string) {
   const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
     headers: {
-      Authorization: `Bearer ${refreshToken}`
+      Authorization: `Bearer ${refreshToken}`,
+      Referer: 'https://kimi.moonshot.cn',
+      ...FAKE_HEADERS
     },
     validateStatus: () => true
   });
@@ -47,7 +55,9 @@ async function createConversation(name: string, refreshToken: string) {
     is_example: false
   }, {
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      Referer: 'https://kimi.moonshot.cn',
+      ...FAKE_HEADERS
     },
     validateStatus: () => true
   });
@@ -61,7 +71,9 @@ async function removeConversation(convId: string, refreshToken: string) {
   const token = await acquireToken(refreshToken);
   const result = await axios.delete(`https://kimi.moonshot.cn/api/chat/${convId}`, {
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+      ...FAKE_HEADERS
     },
     validateStatus: () => true
   });
@@ -77,7 +89,9 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
     use_search: useSearch
   }, {
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+      ...FAKE_HEADERS
     },
     validateStatus: () => true,
     responseType: 'stream'
@@ -97,7 +111,9 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
     use_search: useSearch
   }, {
     headers: {
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+      ...FAKE_HEADERS
     },
     validateStatus: () => true,
     responseType: 'stream'
