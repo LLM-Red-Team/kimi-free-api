@@ -150,6 +150,7 @@ async function receiveStream(convId: string, stream: any) {
       ],
       created: parseInt(performance.now() as any)
     };
+    let refContent = '';
     const parser = createParser(event => {
       try {
         if (event.type !== "event") return;
@@ -159,8 +160,15 @@ async function receiveStream(convId: string, stream: any) {
         if (result.event == 'cmpl') {
           data.choices[0].message.content += result.text;
         }
-        else if (result.event == 'all_done')
+        else if (result.event == 'all_done' || result.event == 'error') {
+          data.choices[0].message.content += '[以下内容由于不合规被停止生成，我们换个话题吧]' + (refContent ? `\n\n搜索结果来自：\n${refContent}` : '');
+          refContent = '';
           resolve(data);
+        }
+        else if(result.event == 'search_plus' && result.msg && result.msg.type == 'get_res')
+          refContent += `${result.msg.title}(${result.msg.url})\n`;
+        // else
+        //   logger.warn(result.event, result);
       }
       catch (err) {
         logger.error(err);
@@ -176,6 +184,7 @@ async function receiveStream(convId: string, stream: any) {
 function createTransStream(convId: string, stream: any, endCallback?: Function) {
   const created = parseInt(performance.now() as any);
   const transStream = new PassThrough();
+  let searchFlag = false;
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
     id: convId,
     model: 'kimi',
@@ -197,19 +206,23 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
           model: 'kimi',
           object: 'chat.completion.chunk',
           choices: [
-            { index: 0, delta: { content: result.text }, finish_reason: null }
+            { index: 0, delta: { content: (searchFlag ? '\n' : '') + result.text }, finish_reason: null }
           ],
           created
         })}\n\n`;
+        if(searchFlag)
+          searchFlag = false;
         !transStream.closed && transStream.write(data);
       }
-      else if (result.event == 'all_done') {
+      else if (result.event == 'all_done' || result.event == 'error') {
         const data = `data: ${JSON.stringify({
           id: convId,
           model: 'kimi',
           object: 'chat.completion.chunk',
           choices: [
-            { index: 0, delta: {}, finish_reason: 'stop' }
+            { index: 0, delta: result.event == 'error' ? {
+              content: '[以下内容由于不合规被停止生成，我们换个话题吧]'
+            } : {}, finish_reason: 'stop' }
           ],
           created
         })}\n\n`;
@@ -217,6 +230,24 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
         !transStream.closed && transStream.end('data: [DONE]\n\n');
         endCallback && endCallback();
       }
+      else if(result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
+        if(!searchFlag)
+          searchFlag = true;
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model: 'kimi',
+          object: 'chat.completion.chunk',
+          choices: [
+            { index: 0, delta: {
+              content: `检索 ${result.msg.title}(${result.msg.url}) ...\n`
+            }, finish_reason: null }
+          ],
+          created
+        })}\n\n`;
+        !transStream.closed && transStream.write(data);
+      }
+      // else
+      //   logger.warn(result.event, result);
     }
     catch (err) {
       logger.error(err);
