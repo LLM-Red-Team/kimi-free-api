@@ -161,7 +161,7 @@ async function receiveStream(convId: string, stream: any) {
           data.choices[0].message.content += result.text;
         }
         else if (result.event == 'all_done' || result.event == 'error') {
-          data.choices[0].message.content += '\n[内容由于不合规被停止生成，我们换个话题吧]' + (refContent ? `\n\n搜索结果来自：\n${refContent}` : '');
+          data.choices[0].message.content += (result.event == 'error' ? '\n[内容由于不合规被停止生成，我们换个话题吧]' : '') + (refContent ? `\n\n搜索结果来自：\n${refContent}` : '');
           refContent = '';
           resolve(data);
         }
