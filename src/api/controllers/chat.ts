@@ -161,7 +161,7 @@ async function receiveStream(convId: string, stream: any) {
           data.choices[0].message.content += result.text;
         }
         else if (result.event == 'all_done' || result.event == 'error') {
-          data.choices[0].message.content += '[以下内容由于不合规被停止生成，我们换个话题吧]' + (refContent ? `\n\n搜索结果来自：\n${refContent}` : '');
+          data.choices[0].message.content += '\n[内容由于不合规被停止生成，我们换个话题吧]' + (refContent ? `\n\n搜索结果来自：\n${refContent}` : '');
           refContent = '';
           resolve(data);
         }
@@ -221,7 +221,7 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
           object: 'chat.completion.chunk',
           choices: [
             { index: 0, delta: result.event == 'error' ? {
-              content: '[以下内容由于不合规被停止生成，我们换个话题吧]'
+              content: '\n[内容由于不合规被停止生成，我们换个话题吧]'
             } : {}, finish_reason: 'stop' }
           ],
           created
