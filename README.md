@@ -10,6 +10,8 @@
 
 ## 在线体验
 
+此链接仅临时测试功能，不可长期使用，长期使用请自行部署并
+
 https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ## 接入准备
@@ -68,6 +70,14 @@ pm2 stop kimi-free-api
 
 POST /v1/chat/completions
 
+header 需要设置 Authorization 头部：
+
+```
+Authorization: Bearer [refresh_token]
+```
+
+JSON数据：
+
 ```json
 {
     "messages": [
@@ -80,3 +90,11 @@ POST /v1/chat/completions
     "stream": false
 }
 ```
+
+## 部署
+
+请准备一台具有公网IP的服务器，按照[安装](#安装)步骤部署好服务并将8000端口开放。
+
+自行使用与openai或其他兼容的客户端接入接口。
+
+或者使用dify线上服务接入使用。
