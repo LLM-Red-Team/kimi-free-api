@@ -85,7 +85,7 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
   const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
   const token = await acquireToken(refreshToken);
   const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-    messages,
+    messages: messagesPrepare(messages),
     use_search: useSearch
   }, {
     headers: {
@@ -107,7 +107,7 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
   const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
   const token = await acquireToken(refreshToken);
   const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-    messages,
+    messages: messagesPrepare(messages),
     use_search: useSearch
   }, {
     headers: {
@@ -122,6 +122,15 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
     removeConversation(convId, refreshToken)
       .catch(err => console.error(err));
   });
+}
+
+function messagesPrepare(messages: any[]) {
+  const content = messages.reduce((content, message) => {
+    return content += `${message.role || 'user'}:${message.content}\n`;
+  }, '');
+  return [
+    { role: 'user', content }
+  ]
 }
 
 function checkResult(result: AxiosResponse, refreshToken: string) {
