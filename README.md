@@ -1,5 +1,9 @@
 # KIMI Free 服务
 
+## 在线体验
+
+https://udify.app/chat/Po0F6BMJ15q5vu2P
+
 ## 安装
 
 请先安装好Node.js环境并且配置好环境变量，确认node命令可用。
