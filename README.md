@@ -14,9 +14,12 @@
 
 https://udify.app/chat/Po0F6BMJ15q5vu2P
 
+![example1](./doc/example-1.png)
+![example2](./doc/example-2.png)
+
 ## 接入准备
 
-从kimi获取refresh_token：进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为API_KEY。
+从kimi.moonshot.cn获取refresh_token：进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为API_KEY。
 
 ## 安装
 
