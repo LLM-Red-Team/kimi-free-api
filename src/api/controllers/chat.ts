@@ -126,11 +126,15 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
 
 function messagesPrepare(messages: any[]) {
   const content = messages.reduce((content, message) => {
-    return content += `${message.role || 'user'}:${message.content}\n`;
+    return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
   }, '');
   return [
     { role: 'user', content }
   ]
+}
+
+function wrapUrlsToTags(content: string) {
+  return content.replace(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi, url => `<url id="" type="url" status="" title="" wc="">${url}</url>`);
 }
 
 function checkResult(result: AxiosResponse, refreshToken: string) {
