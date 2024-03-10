@@ -21,7 +21,39 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 从 [kimi.moonshot.cn](https://kimi.moonshot.cn) 获取refresh_token：进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为API_KEY。
 
-## 安装
+## Docker部署方式
+
+拉取镜像
+
+```shell
+docker pull vinlic/kimi-free-api:latest
+```
+
+启动服务
+
+```shell
+docker run -it -d --init --name kimi-free-api -p 8000:8000 vinlic/kimi-free-api:latest
+```
+
+查看服务实时日志
+
+```shell
+docker logs -f kimi-free-api
+```
+
+重启服务
+
+```shell
+docker restart kimi-free-api
+```
+
+停止服务
+
+```shell
+docker stop kimi-free-api
+```
+
+## 原生部署
 
 请先安装好Node.js环境并且配置好环境变量，确认node命令可用。
 
