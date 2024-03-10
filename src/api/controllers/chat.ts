@@ -1,5 +1,7 @@
 import { PassThrough } from "stream";
+import path from 'path';
 import _ from 'lodash';
+import mime from 'mime';
 import axios, { AxiosResponse } from 'axios';
 
 import APIException from "@/lib/exceptions/APIException.ts";
@@ -82,10 +84,13 @@ async function removeConversation(convId: string, refreshToken: string) {
 
 async function createCompletion(messages: any[], refreshToken: string, useSearch = true) {
   logger.info(messages);
+  const refFileUrls = extractRefFileUrls(messages);
+  const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
   const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
   const token = await acquireToken(refreshToken);
   const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
     messages: messagesPrepare(messages),
+    refs,
     use_search: useSearch
   }, {
     headers: {
@@ -104,10 +109,13 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
 
 async function createCompletionStream(messages: any[], refreshToken: string, useSearch = true) {
   logger.info(messages);
+  const refFileUrls = extractRefFileUrls(messages);
+  const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
   const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
   const token = await acquireToken(refreshToken);
   const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
     messages: messagesPrepare(messages),
+    refs,
     use_search: useSearch
   }, {
     headers: {
@@ -124,10 +132,22 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
   });
 }
 
+function extractRefFileUrls(messages: any[]) {
+  return messages.reduce((urls, message) => {
+    if(message.type != 'file' || !message.url)
+      return urls;
+    urls.push(message.url);
+    return urls;
+  }, []);
+}
+
 function messagesPrepare(messages: any[]) {
   const content = messages.reduce((content, message) => {
+    if(message.type == 'file')
+      return content;
     return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
   }, '');
+
   return [
     { role: 'user', content }
   ]
@@ -135,6 +155,70 @@ function messagesPrepare(messages: any[]) {
 
 function wrapUrlsToTags(content: string) {
   return content.replace(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi, url => `<url id="" type="url" status="" title="" wc="">${url}</url>`);
+}
+
+async function preSignUrl(fileName: string, refreshToken: string) {
+  const token = await acquireToken(refreshToken);
+  const result = await axios.post('https://kimi.moonshot.cn/api/pre-sign-url', {
+      action: 'file',
+      name: fileName
+  }, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn`,
+      ...FAKE_HEADERS
+    },
+    validateStatus: () => true
+  });
+  return checkResult(result, refreshToken);
+}
+
+async function checkFileUrl(fileUrl: string) {
+  const result = await axios.head(fileUrl, {
+    validateStatus: () => true
+  });
+  return result.status == 200 ? true : false;
+}
+
+async function uploadFile(fileUrl: string, refreshToken: string) {
+  if(!await checkFileUrl(fileUrl))
+    throw new APIException(EX.API_FILE_URL_INVALID, `File ${fileUrl} is not valid`);
+  const fileName = path.basename(fileUrl);
+  const { data: fileData } = await axios.get(fileUrl, {
+    responseType: 'arraybuffer'
+  });
+  const {
+    url: uploadUrl,
+    object_name: objectName
+  } =  await preSignUrl(fileName, refreshToken);
+  const mimeType = mime.getType(fileName);
+  const token = await acquireToken(refreshToken);
+  let result = await axios.request({
+    method: 'PUT',
+    url: uploadUrl,
+    data: fileData,
+    headers: {
+      'Content-Type': mimeType,
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn`,
+      ...FAKE_HEADERS
+    },
+    validateStatus: () => true
+  });
+  checkResult(result, refreshToken);
+  result = await axios.post('https://kimi.moonshot.cn/api/file', {
+    type: 'file',
+    name: fileName,
+    object_name: objectName
+  }, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn`,
+      ...FAKE_HEADERS
+    }
+  });
+  const { id: fileId } = checkResult(result, refreshToken);
+  return fileId;
 }
 
 function checkResult(result: AxiosResponse, refreshToken: string) {

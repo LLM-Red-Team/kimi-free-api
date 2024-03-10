@@ -12,10 +12,7 @@ import CRC32 from 'crc-32';
 import randomstring from 'randomstring';
 import _ from 'lodash';
 import { CronJob } from 'cron';
-import { SocksProxyAgent } from 'socks-proxy-agent';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 
-import type { ProxyAgent } from './configs/api-config.ts';
 import HTTP_STATUS_CODE from './http-status-codes.ts';
 
 const autoIdMap = new Map();
@@ -65,21 +62,6 @@ const util = {
     createCronJob(cronPatterns: any, callback?: Function) {
         if(!_.isFunction(callback)) throw new Error("callback must be an Function");
         return new CronJob(cronPatterns, () => callback(), null, false, "Asia/Shanghai");
-    },
-
-    createProxyAgent(options: ProxyAgent) {
-        const { enable, protocol, host, port } = options;
-        if(enable === false)
-            return null;
-        switch(protocol) {
-            case "socks5":
-                return new SocksProxyAgent(`${protocol}://${host}:${port}`);
-            case "http":    
-            case "https":
-                return new HttpsProxyAgent(`${protocol}://${host}:${port}`);
-            default:
-                throw new Error(`protocol ${protocol} is not supported`);
-        }
     },
 
     getDateString(format = "yyyy-MM-dd", date = new Date()) {
