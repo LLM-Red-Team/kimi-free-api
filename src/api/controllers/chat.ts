@@ -139,11 +139,6 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
 
   // 请求流
   const token = await acquireToken(refreshToken);
-  console.log({
-    messages: messagesPrepare(messages),
-    refs,
-    use_search: useSearch
-  })
   const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
     messages: messagesPrepare(messages),
     refs,
