@@ -1,6 +1,6 @@
 # KIMI AI Free 服务
 
-支持流式输出、支持文件解读。
+支持流式输出、支持联网搜索、支持文件解读、支持图像解析。
 
 ## 声明
 
@@ -58,12 +58,19 @@ Authorization: Bearer [refresh_token]
 {
     "messages": [
         {
-            "type": "file",
-            "url": "https://mj101-1317487292.cos.ap-shanghai.myqcloud.com/ai/test.pdf"
-        },
-        {
             "role": "user",
-            "content": "文档里说了什么？"
+            "content": [
+                {
+                    "type": "file",
+                    "file_url": {
+                        "url": "https://mj101-1317487292.cos.ap-shanghai.myqcloud.com/ai/test.pdf"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "文档里说了什么？"
+                }
+            ]
         }
     ],
     // 建议关闭联网搜索，防止干扰解读结果
@@ -87,7 +94,66 @@ Authorization: Bearer [refresh_token]
             "finish_reason": "stop"
         }
     ],
+    "usage": {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0
+    },
     "created": 100920
+}
+```
+
+### 图像解析
+
+此格式兼容 [gpt-4-vision-preview](https://platform.openai.com/docs/guides/vision) API格式，您也可以用这个格式传送文档进行解析。
+
+请求数据：
+```json
+{
+    "messages": [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": "https://www.moonshot.cn/assets/logo/normal-dark.png"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "图像描述了什么？"
+                }
+            ]
+        }
+    ],
+    // 建议关闭联网搜索，防止干扰解读结果
+    "use_search": false
+}
+```
+
+响应数据：
+```json
+{
+    "id": "cnn6l8ilnl92l36tu8ag",
+    "model": "kimi",
+    "object": "chat.completion",
+    "choices": [
+        {
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": "图像中展示了“Moonshot AI”的字样，这可能是月之暗面科技有限公司（Moonshot AI）的标志或者品牌标识。通常这样的图像用于代表公司或产品，传达品牌信息。由于图像是PNG格式，它可能是一个透明背景的logo，用于网站、应用程序或其他视觉材料中。"
+            },
+            "finish_reason": "stop"
+        }
+    ],
+    "usage": {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": 0
+    },
+    "created": 1710123627
 }
 ```
 
