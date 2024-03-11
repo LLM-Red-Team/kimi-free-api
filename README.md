@@ -2,13 +2,25 @@
 
 支持流式输出、支持联网搜索、支持文件解读、支持图像解析。
 
+## 目录
+
+* [声明](#声明)
+* [在线体验](#在线体验)
+* [接入准备](#接入准备)
+* [对话接口](#对话接口)
+  * [文档解读](#文档解读)
+  * [图像解析](#图像解析)
+* [Docker部署](#Docker部署)
+  * [Docker-compose部署](#Docker-compose部署)
+* [原生部署](#原生部署)
+
 ## 声明
 
-仅限自用，禁止对外提供服务，否则风险自担！
+仅限自用，禁止对外提供服务，避免对官方造成服务压力，否则风险自担！
 
-仅限自用，禁止对外提供服务，否则风险自担！
+仅限自用，禁止对外提供服务，避免对官方造成服务压力，否则风险自担！
 
-仅限自用，禁止对外提供服务，否则风险自担！
+仅限自用，禁止对外提供服务，避免对官方造成服务压力，否则风险自担！
 
 ## 在线体验
 
@@ -24,7 +36,7 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 从 [kimi.moonshot.cn](https://kimi.moonshot.cn) 获取refresh_token：进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为API_KEY。
 
-## 对话补全接口
+## 对话接口
 
 目前支持与openai兼容的 `/v1/chat/completions` 接口，可自行使用与openai或其他兼容的客户端接入接口，或者使用dify线上服务接入使用。
 
@@ -52,7 +64,7 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### 文件上传解读
+### 文档解读
 
 提供一个可访问的文件URL或者BASE64_URL进行解析。
 
@@ -166,16 +178,10 @@ Authorization: Bearer [refresh_token]
 
 请准备一台具有公网IP的服务器并将8000端口开放。
 
-拉取镜像
+拉取镜像并启动服务
 
 ```shell
-docker pull vinlic/kimi-free-api:latest
-```
-
-启动服务
-
-```shell
-docker run -it -d --init --name kimi-free-api -p 8000:8000 vinlic/kimi-free-api:latest
+docker run -it -d --init --name kimi-free-api -p 8000:8000 -e TZ=Asia/Shanghai vinlic/kimi-free-api:latest
 ```
 
 查看服务实时日志
@@ -194,6 +200,22 @@ docker restart kimi-free-api
 
 ```shell
 docker stop kimi-free-api
+```
+
+### Docker-compose部署
+
+```yaml
+version: '3'
+
+services:
+  kimi-free-api:
+    container_name: kimi-free-api
+    image: vinlic/kimi-free-api:latest
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - TZ=Asia/Shanghai
 ```
 
 ## 原生部署
