@@ -298,6 +298,8 @@ async function preSignUrl(filename: string, refreshToken: string) {
  * @param fileUrl 文件URL
  */
 async function checkFileUrl(fileUrl: string) {
+  if(util.isBASE64Data(fileUrl))
+    return;
   const result = await axios.head(fileUrl, {
     timeout: 15000,
     validateStatus: () => true
@@ -322,24 +324,34 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   // 预检查远程文件URL可用性
   await checkFileUrl(fileUrl);
 
+  let filename, fileData, mimeType;
+  // 如果是BASE64数据则直接转换为Buffer
+  if(util.isBASE64Data(fileUrl)) {
+    mimeType = util.extractBASE64DataFormat(fileUrl);
+    const ext = mime.getExtension(mimeType);
+    filename = `${util.uuid()}.${ext}`;
+    fileData = Buffer.from(util.removeBASE64DataHeader(fileUrl), 'base64');
+  }
   // 下载文件到内存，如果您的服务器内存很小，建议考虑改造为流直传到下一个接口上，避免停留占用内存
-  const filename = path.basename(fileUrl);
-  const { data: fileData } = await axios.get(fileUrl, {
-    responseType: 'arraybuffer',
-    // 100M限制
-    maxContentLength: FILE_MAX_SIZE,
-    // 60秒超时
-    timeout: 60000
-  });
+  else {
+    filename = path.basename(fileUrl);
+    ({ data: fileData } = await axios.get(fileUrl, {
+      responseType: 'arraybuffer',
+      // 100M限制
+      maxContentLength: FILE_MAX_SIZE,
+      // 60秒超时
+      timeout: 60000
+    }));
+  }
 
   // 获取预签名文件URL
   const {
     url: uploadUrl,
     object_name: objectName
   } = await preSignUrl(filename, refreshToken);
-
+  
   // 获取文件的MIME类型
-  const mimeType = mime.getType(filename);
+  mimeType = mimeType || mime.getType(filename);
   // 上传文件到目标OSS
   const token = await acquireToken(refreshToken);
   let result = await axios.request({

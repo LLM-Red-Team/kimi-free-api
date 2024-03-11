@@ -53,6 +53,8 @@ Authorization: Bearer [refresh_token]
 
 ### 文件上传解读
 
+提供一个可访问的文件URL或者BASE64_URL进行解析。
+
 请求数据：
 ```json
 {
@@ -104,6 +106,8 @@ Authorization: Bearer [refresh_token]
 ```
 
 ### 图像解析
+
+提供一个可访问的图像URL或者BASE64_URL进行解析。
 
 此格式兼容 [gpt-4-vision-preview](https://platform.openai.com/docs/guides/vision) API格式，您也可以用这个格式传送文档进行解析。
 

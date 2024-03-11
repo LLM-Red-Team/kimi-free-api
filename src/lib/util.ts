@@ -136,18 +136,18 @@ const util = {
         return !_.isUndefined(value) && /^[a-zA-Z0-9\/\+]+(=?)+$/.test(value);
     },
 
-    isBASE64Image(value) {
-        return /^data:image/.test(value);
+    isBASE64Data(value) {
+        return /^data:/.test(value);
     },
 
-    extractBASE64ImageFormat(value): string | null {
-        const match = value.trim().match(/^data:image\/(.+);base64,/);
+    extractBASE64DataFormat(value): string | null {
+        const match = value.trim().match(/^data:(.+);base64,/);
         if(!match) return null;
         return match[1];
     },
 
-    removeBASE64ImageHeader(value): string {
-        return value.replace(/^data:image\/(.+);base64,/, "");
+    removeBASE64DataHeader(value): string {
+        return value.replace(/^data:(.+);base64,/, "");
     },
 
     isDataString(value): boolean {

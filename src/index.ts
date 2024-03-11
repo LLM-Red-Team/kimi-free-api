@@ -23,7 +23,7 @@ const startupTime = performance.now();
   await server.listen();
 
   config.service.bindAddress &&
-    logger.success("service bind address:", config.service.bindAddress);
+    logger.success("Service bind address:", config.service.bindAddress);
 })()
   .then(() =>
     logger.success(
