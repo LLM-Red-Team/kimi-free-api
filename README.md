@@ -18,6 +18,7 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ![example1](./doc/example-1.png)
 ![example2](./doc/example-2.png)
+![example3](./doc/example-3.png)
 
 ## 接入准备
 
