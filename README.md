@@ -1,5 +1,10 @@
 # KIMI AI Free 服务
 
+![](https://img.shields.io/github/license/vinlic/kimi-free-api)
+![](https://img.shields.io/github/stars/vinlic/kimi-free-api)
+![](https://img.shields.io/github/forks/vinlic/kimi-free-api)
+![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api)
+
 支持流式输出、支持多轮对话、支持联网搜索、支持文件解读、支持图像解析，零配置部署。
 
 与ChatGPT接口完全兼容。
