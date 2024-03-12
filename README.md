@@ -5,7 +5,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
 
-支持高速流式输出、支持多轮对话、支持联网搜索、支持长文档解读、支持图像解析，零配置部署。
+支持高速流式输出、支持多轮对话、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，自动清理会话痕迹。
 
 与ChatGPT接口完全兼容。
 
