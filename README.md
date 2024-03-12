@@ -43,6 +43,10 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ![验明正身](./doc/example-1.png)
 
+### 多轮对话
+
+![多轮对话](./doc/example-6.png)
+
 ### 联网搜索
 
 ![联网搜索](./doc/example-2.png)
