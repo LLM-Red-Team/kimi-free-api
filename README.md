@@ -1,11 +1,11 @@
 # KIMI AI Free 服务
 
-![](https://img.shields.io/github/license/vinlic/kimi-free-api)
-![](https://img.shields.io/github/stars/vinlic/kimi-free-api)
-![](https://img.shields.io/github/forks/vinlic/kimi-free-api)
-![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api)
+![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)
+![](https://img.shields.io/github/stars/llm-red-team/kimi-free-api.svg)
+![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
+![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
 
-支持流式输出、支持多轮对话、支持联网搜索、支持文件解读、支持图像解析，零配置部署。
+支持高速流式输出、支持多轮对话、支持联网搜索、支持长文档解读、支持图像解析，零配置部署。
 
 与ChatGPT接口完全兼容。
 
@@ -13,6 +13,7 @@
 
 * [声明](#声明)
 * [在线体验](#在线体验)
+* [效果示例](#效果示例)
 * [接入准备](#接入准备)
 * [Docker部署](#Docker部署)
   * [Docker-compose部署](#Docker-compose部署)
@@ -36,9 +37,23 @@
 
 https://udify.app/chat/Po0F6BMJ15q5vu2P
 
-![example1](./doc/example-1.png)
-![example2](./doc/example-2.png)
-![example3](./doc/example-3.png)
+## 效果示例
+
+### 验明正身
+
+![验明正身](./doc/example-1.png)
+
+### 联网搜索
+
+![联网搜索](./doc/example-2.png)
+
+### 长文档解读
+
+![长文档解读](./doc/example-5.png)
+
+### 图像解析
+
+![图像解析](./doc/example-3.png)
 
 ## 接入准备
 
