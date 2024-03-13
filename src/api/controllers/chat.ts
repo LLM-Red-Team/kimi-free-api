@@ -192,8 +192,10 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
     responseType: 'stream'
   });
 
+  const streamStartTime = util.timestamp();
   // 接收流为输出文本
   const answer = await receiveStream(convId, result.data);
+  logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
 
   // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
   removeConversation(convId, refreshToken)
@@ -236,10 +238,10 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
     validateStatus: () => true,
     responseType: 'stream'
   });
-
+  const streamStartTime = util.timestamp();
   // 创建转换流将消息格式转换为gpt兼容格式
   return createTransStream(convId, result.data, () => {
-    logger.success('Stream has completed transfer');
+    logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
     // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
     removeConversation(convId, refreshToken)
       .catch(err => console.error(err));
