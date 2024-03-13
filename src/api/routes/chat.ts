@@ -17,7 +17,6 @@ export default {
                 .validate('headers.authorization', _.isString)
             const token = request.headers.authorization;
             const refreshToken = token.replace('Bearer ', '');
-            logger.info(`Refresh token: ${refreshToken}`);
             const messages =  request.body.messages;
             if (request.body.stream) {
                 const stream = await chat.createCompletionStream(request.body.messages, refreshToken, request.body.use_search);

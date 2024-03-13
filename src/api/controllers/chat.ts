@@ -34,6 +34,8 @@ const FAKE_HEADERS = {
 const FILE_MAX_SIZE = 100 * 1024 * 1024;
 // access_token映射
 const accessTokenMap = new Map();
+// access_token请求队列映射
+const accessTokenRequestQueueMap: Record<string, Function[]> = {};
 
 /**
  * 请求access_token
@@ -43,24 +45,48 @@ const accessTokenMap = new Map();
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function requestToken(refreshToken: string) {
-  const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
-    headers: {
-      Authorization: `Bearer ${refreshToken}`,
-      Referer: 'https://kimi.moonshot.cn',
-      ...FAKE_HEADERS
-    },
-    timeout: 15000,
-    validateStatus: () => true
-  });
-  const {
-    access_token,
-    refresh_token
-  } = checkResult(result, refreshToken);
-  return {
-    accessToken: access_token,
-    refreshToken: refresh_token,
-    refreshTime: util.unixTimestamp() + ACCESS_TOKEN_EXPIRES
-  }
+  if (accessTokenRequestQueueMap[refreshToken])
+    return new Promise(resolve => accessTokenRequestQueueMap[refreshToken].push(resolve));
+  accessTokenRequestQueueMap[refreshToken] = [];
+  logger.info(`Refresh token: ${refreshToken}`);
+  const result = await (async () => {
+    const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
+      headers: {
+        Authorization: `Bearer ${refreshToken}`,
+        Referer: 'https://kimi.moonshot.cn',
+        ...FAKE_HEADERS
+      },
+      timeout: 15000,
+      validateStatus: () => true
+    });
+    const {
+      access_token,
+      refresh_token
+    } = checkResult(result, refreshToken);
+    return {
+      accessToken: access_token,
+      refreshToken: refresh_token,
+      refreshTime: util.unixTimestamp() + ACCESS_TOKEN_EXPIRES
+    }
+  })()
+    .then(result => {
+      if(accessTokenRequestQueueMap[refreshToken]) {
+        accessTokenRequestQueueMap[refreshToken].forEach(resolve => resolve(result));
+        delete accessTokenRequestQueueMap[refreshToken];
+      }
+      logger.success(`Refresh successful`);
+      return result;
+    })
+    .catch(err => {
+      if(accessTokenRequestQueueMap[refreshToken]) {
+        accessTokenRequestQueueMap[refreshToken].forEach(resolve => resolve(err));
+        delete accessTokenRequestQueueMap[refreshToken];
+      }
+      return err;
+    });
+  if(_.isError(result))
+    throw result;
+  return result;
 }
 
 /**
@@ -224,15 +250,15 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
  */
 function extractRefFileUrls(messages: any[]) {
   return messages.reduce((urls, message) => {
-    if(_.isArray(message.content)) {
+    if (_.isArray(message.content)) {
       message.content.forEach(v => {
-        if(!_.isObject(v) || !['file', 'image_url'].includes(v['type']))
+        if (!_.isObject(v) || !['file', 'image_url'].includes(v['type']))
           return;
         // kimi-free-api支持格式
-        if(v['type'] == 'file' && _.isObject(v['file_url']) && _.isString(v['file_url']['url']))
+        if (v['type'] == 'file' && _.isObject(v['file_url']) && _.isString(v['file_url']['url']))
           urls.push(v['file_url']['url']);
         // 兼容gpt-4-vision-preview API格式
-        else if(v['type'] == 'image_url' && _.isObject(v['image_url']) && _.isString(v['image_url']['url']))
+        else if (v['type'] == 'image_url' && _.isObject(v['image_url']) && _.isString(v['image_url']['url']))
           urls.push(v['image_url']['url']);
       });
     }
@@ -254,7 +280,7 @@ function messagesPrepare(messages: any[]) {
   const content = messages.reduce((content, message) => {
     if (_.isArray(message.content)) {
       return message.content.reduce((_content, v) => {
-        if(!_.isObject(v) || v['type'] != 'text')
+        if (!_.isObject(v) || v['type'] != 'text')
           return _content;
         return _content + (v['text'] || '');
       }, content);
@@ -307,18 +333,18 @@ async function preSignUrl(filename: string, refreshToken: string) {
  * @param fileUrl 文件URL
  */
 async function checkFileUrl(fileUrl: string) {
-  if(util.isBASE64Data(fileUrl))
+  if (util.isBASE64Data(fileUrl))
     return;
   const result = await axios.head(fileUrl, {
     timeout: 15000,
     validateStatus: () => true
   });
-  if(result.status >= 400)
+  if (result.status >= 400)
     throw new APIException(EX.API_FILE_URL_INVALID, `File ${fileUrl} is not valid: [${result.status}] ${result.statusText}`);
   // 检查文件大小
   if (result.headers && result.headers['content-length']) {
     const fileSize = parseInt(result.headers['content-length'], 10);
-    if(fileSize > FILE_MAX_SIZE)
+    if (fileSize > FILE_MAX_SIZE)
       throw new APIException(EX.API_FILE_EXECEEDS_SIZE, `File ${fileUrl} is not valid`);
   }
 }
@@ -335,7 +361,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
 
   let filename, fileData, mimeType;
   // 如果是BASE64数据则直接转换为Buffer
-  if(util.isBASE64Data(fileUrl)) {
+  if (util.isBASE64Data(fileUrl)) {
     mimeType = util.extractBASE64DataFormat(fileUrl);
     const ext = mime.getExtension(mimeType);
     filename = `${util.uuid()}.${ext}`;
@@ -358,7 +384,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     url: uploadUrl,
     object_name: objectName
   } = await preSignUrl(filename, refreshToken);
-  
+
   // 获取文件的MIME类型
   mimeType = mimeType || mime.getType(filename);
   // 上传文件到目标OSS
