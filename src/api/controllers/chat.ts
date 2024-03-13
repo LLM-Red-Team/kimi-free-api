@@ -102,8 +102,10 @@ async function acquireToken(refreshToken: string): Promise<string> {
     result = await requestToken(refreshToken);
     accessTokenMap.set(refreshToken, result);
   }
-  if (util.unixTimestamp() > result.refreshTime)
+  if (util.unixTimestamp() > result.refreshTime) {
     result = await requestToken(refreshToken);
+    accessTokenMap.set(refreshToken, result);
+  }
   return result.accessToken;
 }
 
