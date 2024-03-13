@@ -6,7 +6,6 @@ import "@/lib/initialize.ts";
 import server from "@/lib/server.ts";
 import routes from "@/api/routes/index.ts";
 import logger from "@/lib/logger.ts";
-import util from "@/lib/util.ts";
 
 const startupTime = performance.now();
 
