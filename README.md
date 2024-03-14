@@ -59,6 +59,10 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ![图像解析](./doc/example-3.png)
 
+### 响应耗时比较
+
+![响应耗时比较](https://github.com/LLM-Red-Team/kimi-free-api/assets/20235341/80d9ebd7-436d-442f-afc9-8ae2677e7815)
+
 ## 接入准备
 
 从 [kimi.moonshot.cn](https://kimi.moonshot.cn) 获取refresh_token
