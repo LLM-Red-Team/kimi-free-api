@@ -61,9 +61,9 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ![图像解析](./doc/example-3.png)
 
-### 响应耗时比较
+### 响应流畅度一致
 
-![响应耗时比较](https://github.com/LLM-Red-Team/kimi-free-api/assets/20235341/80d9ebd7-436d-442f-afc9-8ae2677e7815)
+![响应流畅度一致](https://github.com/LLM-Red-Team/kimi-free-api/assets/20235341/48c7ec00-2b03-46c4-95d0-452d3075219b)
 
 ## 接入准备
 
