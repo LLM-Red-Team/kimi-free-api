@@ -15,17 +15,19 @@ export default {
             request
                 .validate('body.messages', _.isArray)
                 .validate('headers.authorization', _.isString)
-            const token = request.headers.authorization;
-            const refreshToken = token.replace('Bearer ', '');
+            // refresh_token切分
+            const tokens = chat.tokenSplit(request.headers.authorization);
+            // 随机挑选一个refresh_token
+            const token = _.sample(tokens);
             const messages =  request.body.messages;
             if (request.body.stream) {
-                const stream = await chat.createCompletionStream(request.body.messages, refreshToken, request.body.use_search);
+                const stream = await chat.createCompletionStream(request.body.messages, token, request.body.use_search);
                 return new Response(stream, {
                     type: "text/event-stream"
                 });
             }
             else
-                return await chat.createCompletion(messages, refreshToken, request.body.use_search);
+                return await chat.createCompletion(messages, token, request.body.use_search);
         }
 
     }

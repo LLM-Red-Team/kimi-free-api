@@ -619,8 +619,18 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
   return transStream;
 }
 
+/**
+ * Token切分
+ * 
+ * @param authorization 认证字符串
+ */
+function tokenSplit(authorization: string) {
+  return authorization.replace('Bearer ', '').split(',');
+}
+
 export default {
   createConversation,
   createCompletion,
-  createCompletionStream
+  createCompletionStream,
+  tokenSplit
 };

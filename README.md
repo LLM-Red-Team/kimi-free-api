@@ -5,7 +5,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
 
-支持高速流式输出、支持多轮对话、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，自动清理会话痕迹。
+支持高速流式输出、支持多轮对话、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
 
 与ChatGPT接口完全兼容。
 
@@ -15,6 +15,7 @@
 * [在线体验](#在线体验)
 * [效果示例](#效果示例)
 * [接入准备](#接入准备)
+  * [多账号接入](#多账号接入)
 * [Docker部署](#Docker部署)
   * [Docker-compose部署](#Docker-compose部署)
 * [原生部署](#原生部署)
@@ -69,9 +70,17 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 从 [kimi.moonshot.cn](https://kimi.moonshot.cn) 获取refresh_token
 
-进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为Authorization的Bearer KEY值。
+进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为Authorization的Bearer Token值：`Authorization: Bearer TOKEN`
 
 ![example0](./doc/example-0.png)
+
+### 多账号接入
+
+目前kimi限制普通账号每3小时内只能进行30轮长文本的问答，你可以通过提供多个账号的refresh_token并使用`,`拼接提供：
+
+`Authorization: Bearer TOKEN1,TOKEN2,TOKEN3`
+
+每次请求服务会从中挑选一个。
 
 ## Docker部署
 
