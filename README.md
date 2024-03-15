@@ -66,6 +66,10 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ![响应流畅度一致](https://github.com/LLM-Red-Team/kimi-free-api/assets/20235341/48c7ec00-2b03-46c4-95d0-452d3075219b)
 
+### 100线程并发测试
+
+![100线程并发测试](./doc/example-7.jpg)
+
 ## 接入准备
 
 从 [kimi.moonshot.cn](https://kimi.moonshot.cn) 获取refresh_token
