@@ -29,6 +29,11 @@ export default class Exception extends Error {
         this.errmsg = _errmsg || errmsg;
     }
 
+    compare(exception: (string | number)[]) {
+        const [errcode] = exception as [number, string];
+        return this.errcode == errcode;
+    }
+
     setHTTPStatusCode(value: number) {
         this.httpStatusCode = value;
         return this;

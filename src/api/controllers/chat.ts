@@ -14,6 +14,10 @@ import util from '@/lib/util.ts';
 const MODEL_NAME = 'kimi';
 // access_token有效期
 const ACCESS_TOKEN_EXPIRES = 300;
+// 最大重试次数
+const MAX_RETRY_COUNT = 3;
+// 重试延迟
+const RETRY_DELAY = 5000;
 // 伪装headers
 const FAKE_HEADERS = {
   'Accept': '*/*',
@@ -163,45 +167,59 @@ async function removeConversation(convId: string, refreshToken: string) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
  * @param useSearch 是否开启联网搜索
+ * @param retryCount 重试次数
  */
-async function createCompletion(messages: any[], refreshToken: string, useSearch = true) {
-  logger.info(messages);
+async function createCompletion(messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
+  return (async () => {
+    logger.info(messages);
 
-  // 提取引用文件URL并上传kimi获得引用的文件ID列表
-  const refFileUrls = extractRefFileUrls(messages);
-  const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
+    // 提取引用文件URL并上传kimi获得引用的文件ID列表
+    const refFileUrls = extractRefFileUrls(messages);
+    const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
 
-  // 创建会话
-  const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
+    // 创建会话
+    const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
 
-  // 请求流
-  const token = await acquireToken(refreshToken);
-  const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-    messages: messagesPrepare(messages),
-    refs,
-    use_search: useSearch
-  }, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Referer: `https://kimi.moonshot.cn/chat/${convId}`,
-      ...FAKE_HEADERS
-    },
-    // 120秒超时
-    timeout: 120000,
-    validateStatus: () => true,
-    responseType: 'stream'
-  });
+    // 请求流
+    const token = await acquireToken(refreshToken);
+    const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
+      messages: messagesPrepare(messages),
+      refs,
+      use_search: useSearch
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+        ...FAKE_HEADERS
+      },
+      // 120秒超时
+      timeout: 120000,
+      validateStatus: () => true,
+      responseType: 'stream'
+    });
 
-  const streamStartTime = util.timestamp();
-  // 接收流为输出文本
-  const answer = await receiveStream(convId, result.data);
-  logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
+    const streamStartTime = util.timestamp();
+    // 接收流为输出文本
+    const answer = await receiveStream(convId, result.data);
+    logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
 
-  // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
-  removeConversation(convId, refreshToken)
-    .catch(err => console.error(err));
+    // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
+    removeConversation(convId, refreshToken)
+      .catch(err => console.error(err));
 
-  return answer;
+    return answer;
+  })()
+    .catch(err => {
+      if(retryCount < MAX_RETRY_COUNT) {
+        logger.error(`Stream response error: ${err.message}`);
+        logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
+        return (async () => {
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return createCompletion(messages, refreshToken, useSearch, retryCount + 1);
+        })();
+      }
+      throw err;
+    });
 }
 
 /**
@@ -210,42 +228,56 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
  * @param useSearch 是否开启联网搜索
+ * @param retryCount 重试次数
  */
-async function createCompletionStream(messages: any[], refreshToken: string, useSearch = true) {
-  logger.info(messages);
+async function createCompletionStream(messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
+  return (async () => {
+    logger.info(messages);
 
-  // 提取引用文件URL并上传kimi获得引用的文件ID列表
-  const refFileUrls = extractRefFileUrls(messages);
-  const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
+    // 提取引用文件URL并上传kimi获得引用的文件ID列表
+    const refFileUrls = extractRefFileUrls(messages);
+    const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
 
-  // 创建会话
-  const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
+    // 创建会话
+    const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
 
-  // 请求流
-  const token = await acquireToken(refreshToken);
-  const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-    messages: messagesPrepare(messages),
-    refs,
-    use_search: useSearch
-  }, {
-    // 120秒超时
-    timeout: 120000,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Referer: `https://kimi.moonshot.cn/chat/${convId}`,
-      ...FAKE_HEADERS
-    },
-    validateStatus: () => true,
-    responseType: 'stream'
-  });
-  const streamStartTime = util.timestamp();
-  // 创建转换流将消息格式转换为gpt兼容格式
-  return createTransStream(convId, result.data, () => {
-    logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
-    // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
-    removeConversation(convId, refreshToken)
-      .catch(err => console.error(err));
-  });
+    // 请求流
+    const token = await acquireToken(refreshToken);
+    const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
+      messages: messagesPrepare(messages),
+      refs,
+      use_search: useSearch
+    }, {
+      // 120秒超时
+      timeout: 120000,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+        ...FAKE_HEADERS
+      },
+      validateStatus: () => true,
+      responseType: 'stream'
+    });
+    const streamStartTime = util.timestamp();
+    // 创建转换流将消息格式转换为gpt兼容格式
+    return createTransStream(convId, result.data, () => {
+      logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
+      // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
+      removeConversation(convId, refreshToken)
+        .catch(err => console.error(err));
+    });
+  })()
+    .catch(err => {
+      if(retryCount < MAX_RETRY_COUNT) {
+        logger.error(`Stream response error: ${err.message}`);
+        logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
+        return (async () => {
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+          return createCompletionStream(messages, refreshToken, useSearch, retryCount + 1);
+        })();
+      }
+      throw err;
+    });
 }
 
 /**
