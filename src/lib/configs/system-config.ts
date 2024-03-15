@@ -44,12 +44,12 @@ export class SystemConfig {
         this.requestBody = Object.assign(requestBody || {}, {
             enableTypes: ['json', 'form', 'text', 'xml'],
             encoding: 'utf-8',
-            formLimit: '10mb',
-            jsonLimit: '10mb',
-            textLimit: '10mb',
-            xmlLimit: '10mb',
+            formLimit: '100mb',
+            jsonLimit: '100mb',
+            textLimit: '100mb',
+            xmlLimit: '100mb',
             formidable: {
-                maxFileSize: '30mb'
+                maxFileSize: '100mb'
             },
             multipart: true,
             parsedMethods: ['POST', 'PUT', 'PATCH']

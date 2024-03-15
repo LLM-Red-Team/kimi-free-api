@@ -461,6 +461,8 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
     return result.data;
   if (error_type == 'auth.token.invalid')
     accessTokenMap.delete(refreshToken);
+  if (error_type == 'chat.user_stream_pushing')
+    throw new APIException(EX.API_CHAT_STREAM_PUSHING);
   throw new APIException(EX.API_REQUEST_FAILED, `[请求kimi失败]: ${message}`);
 }
 
