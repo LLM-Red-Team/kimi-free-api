@@ -1,6 +1,6 @@
 {
   "name": "kimi-free-api",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Kimi Free API Server",
   "type": "module",
   "main": "dist/index.js",
