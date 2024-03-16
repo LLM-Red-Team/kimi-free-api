@@ -74,9 +74,13 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 从 [kimi.moonshot.cn](https://kimi.moonshot.cn) 获取refresh_token
 
-进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到refresh_token的值，这将作为Authorization的Bearer Token值：`Authorization: Bearer TOKEN`
+进入kimi随便发起一个对话，然后F12打开开发者工具，从Application > Local Storage中找到`refresh_token`的值，这将作为Authorization的Bearer Token值：`Authorization: Bearer TOKEN`
 
 ![example0](./doc/example-0.png)
+
+如果你看到的`refresh_token`是一个数组，请使用`.`拼接起来再使用。
+
+![example8](./doc/example-8.jpg)
 
 ### 多账号接入
 
