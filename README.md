@@ -231,9 +231,9 @@ Authorization: Bearer [refresh_token]
         }
     ],
     "usage": {
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-        "total_tokens": 0
+        "prompt_tokens": 1,
+        "completion_tokens": 1,
+        "total_tokens": 2
     },
     "created": 1710152062
 }
@@ -293,9 +293,9 @@ Authorization: Bearer [refresh_token]
         }
     ],
     "usage": {
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-        "total_tokens": 0
+        "prompt_tokens": 1,
+        "completion_tokens": 1,
+        "total_tokens": 2
     },
     "created": 100920
 }
@@ -357,9 +357,9 @@ Authorization: Bearer [refresh_token]
         }
     ],
     "usage": {
-        "prompt_tokens": 0,
-        "completion_tokens": 0,
-        "total_tokens": 0
+        "prompt_tokens": 1,
+        "completion_tokens": 1,
+        "total_tokens": 2
     },
     "created": 1710123627
 }
@@ -383,3 +383,7 @@ tcp_nodelay on;
 # 设置保持连接的超时时间，这里设置为120秒。如果在这段时间内，客户端和服务器之间没有进一步的通信，连接将被关闭。
 keepalive_timeout 120;
 ```
+
+### Token统计
+
+由于推理侧不再kimi-free-api，因此token不可统计，将以固定数字返回。

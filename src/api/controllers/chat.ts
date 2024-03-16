@@ -506,7 +506,7 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
  */
 async function receiveStream(convId: string, stream: any) {
   return new Promise((resolve, reject) => {
-    // 第一条消息初始化
+    // 消息初始化
     const data = {
       id: convId,
       model: MODEL_NAME,
@@ -514,7 +514,7 @@ async function receiveStream(convId: string, stream: any) {
       choices: [
         { index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'stop' }
       ],
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
       created: util.unixTimestamp()
     };
     let refContent = '';
@@ -612,7 +612,7 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
               } : {}, finish_reason: 'stop'
             }
           ],
-          usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
           created
         })}\n\n`;
         !transStream.closed && transStream.write(data);
