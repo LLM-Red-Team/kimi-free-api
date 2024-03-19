@@ -201,6 +201,8 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
+    // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    "model": "kimi",
     "messages": [
         {
             "role": "user",
@@ -254,6 +256,8 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
+    // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    "model": "kimi",
     "messages": [
         {
             "role": "user",
@@ -318,6 +322,8 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
+    // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    "model": "kimi",
     "messages": [
         {
             "role": "user",

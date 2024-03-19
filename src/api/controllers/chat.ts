@@ -164,12 +164,13 @@ async function removeConversation(convId: string, refreshToken: string) {
 /**
  * 同步对话补全
  * 
+ * @param model 模型名称
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
  * @param useSearch 是否开启联网搜索
  * @param retryCount 重试次数
  */
-async function createCompletion(messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
+async function createCompletion(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
   return (async () => {
     logger.info(messages);
 
@@ -204,7 +205,7 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
 
     const streamStartTime = util.timestamp();
     // 接收流为输出文本
-    const answer = await receiveStream(convId, result.data);
+    const answer = await receiveStream(model, convId, result.data);
     logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
 
     // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
@@ -219,7 +220,7 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return createCompletion(messages, refreshToken, useSearch, retryCount + 1);
+          return createCompletion(model, messages, refreshToken, useSearch, retryCount + 1);
         })();
       }
       throw err;
@@ -229,12 +230,13 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
 /**
  * 流式对话补全
  * 
+ * @param model 模型名称
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
  * @param useSearch 是否开启联网搜索
  * @param retryCount 重试次数
  */
-async function createCompletionStream(messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
+async function createCompletionStream(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
   return (async () => {
     logger.info(messages);
 
@@ -268,7 +270,7 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
     });
     const streamStartTime = util.timestamp();
     // 创建转换流将消息格式转换为gpt兼容格式
-    return createTransStream(convId, result.data, () => {
+    return createTransStream(model, convId, result.data, () => {
       logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
       // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
       removeConversation(convId, refreshToken)
@@ -281,7 +283,7 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return createCompletionStream(messages, refreshToken, useSearch, retryCount + 1);
+          return createCompletionStream(model, messages, refreshToken, useSearch, retryCount + 1);
         })();
       }
       throw err;
@@ -541,15 +543,16 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
 /**
  * 从流接收完整的消息内容
  * 
+ * @param model 模型名称
  * @param convId 会话ID
  * @param stream 消息流
  */
-async function receiveStream(convId: string, stream: any) {
+async function receiveStream(model: string, convId: string, stream: any) {
   return new Promise((resolve, reject) => {
     // 消息初始化
     const data = {
       id: convId,
-      model: MODEL_NAME,
+      model,
       object: 'chat.completion',
       choices: [
         { index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'stop' }
@@ -558,6 +561,7 @@ async function receiveStream(convId: string, stream: any) {
       created: util.unixTimestamp()
     };
     let refContent = '';
+    const silentSearch = model.indexOf('silent_search') != -1;
     const parser = createParser(event => {
       try {
         if (event.type !== "event") return;
@@ -576,7 +580,7 @@ async function receiveStream(convId: string, stream: any) {
           resolve(data);
         }
         // 处理联网搜索
-        else if (result.event == 'search_plus' && result.msg && result.msg.type == 'get_res')
+        else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res')
           refContent += `${result.msg.title}(${result.msg.url})\n`;
         // else
         //   logger.warn(result.event, result);
@@ -598,19 +602,21 @@ async function receiveStream(convId: string, stream: any) {
  * 
  * 将流格式转换为gpt兼容流格式
  * 
+ * @param model 模型名称
  * @param convId 会话ID
  * @param stream 消息流
  * @param endCallback 传输结束回调
  */
-function createTransStream(convId: string, stream: any, endCallback?: Function) {
+function createTransStream(model: string, convId: string, stream: any, endCallback?: Function) {
   // 消息创建时间
   const created = util.unixTimestamp();
   // 创建转换流
   const transStream = new PassThrough();
   let searchFlag = false;
+  const silentSearch = model.indexOf('silent_search') != -1;
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
     id: convId,
-    model: MODEL_NAME,
+    model,
     object: 'chat.completion.chunk',
     choices: [
       { index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }
@@ -628,7 +634,7 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
       if (result.event == 'cmpl') {
         const data = `data: ${JSON.stringify({
           id: convId,
-          model: MODEL_NAME,
+          model,
           object: 'chat.completion.chunk',
           choices: [
             { index: 0, delta: { content: (searchFlag ? '\n' : '') + result.text }, finish_reason: null }
@@ -643,7 +649,7 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
       else if (result.event == 'all_done' || result.event == 'error') {
         const data = `data: ${JSON.stringify({
           id: convId,
-          model: MODEL_NAME,
+          model,
           object: 'chat.completion.chunk',
           choices: [
             {
@@ -660,12 +666,12 @@ function createTransStream(convId: string, stream: any, endCallback?: Function) 
         endCallback && endCallback();
       }
       // 处理联网搜索
-      else if (result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
+      else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
         if (!searchFlag)
           searchFlag = true;
         const data = `data: ${JSON.stringify({
           id: convId,
-          model: MODEL_NAME,
+          model,
           object: 'chat.completion.chunk',
           choices: [
             {
