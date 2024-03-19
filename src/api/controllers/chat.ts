@@ -24,7 +24,7 @@ const FAKE_HEADERS = {
   'Accept-Encoding': 'gzip, deflate, br, zstd',
   'Accept-Language': 'zh-CN,zh;q=0.9',
   'Origin': 'https://kimi.moonshot.cn',
-  'Cookie': util.generateCookie(),
+  // 'Cookie': util.generateCookie(),
   'R-Timezone': 'Asia/Shanghai',
   'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
   'Sec-Ch-Ua-Mobile': '?0',
@@ -57,7 +57,7 @@ async function requestToken(refreshToken: string) {
     const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
       headers: {
         Authorization: `Bearer ${refreshToken}`,
-        Referer: 'https://kimi.moonshot.cn',
+        Referer: 'https://kimi.moonshot.cn/',
         ...FAKE_HEADERS
       },
       timeout: 15000,
@@ -74,7 +74,7 @@ async function requestToken(refreshToken: string) {
     }
   })()
     .then(result => {
-      if(accessTokenRequestQueueMap[refreshToken]) {
+      if (accessTokenRequestQueueMap[refreshToken]) {
         accessTokenRequestQueueMap[refreshToken].forEach(resolve => resolve(result));
         delete accessTokenRequestQueueMap[refreshToken];
       }
@@ -82,13 +82,13 @@ async function requestToken(refreshToken: string) {
       return result;
     })
     .catch(err => {
-      if(accessTokenRequestQueueMap[refreshToken]) {
+      if (accessTokenRequestQueueMap[refreshToken]) {
         accessTokenRequestQueueMap[refreshToken].forEach(resolve => resolve(err));
         delete accessTokenRequestQueueMap[refreshToken];
       }
       return err;
     });
-  if(_.isError(result))
+  if (_.isError(result))
     throw result;
   return result;
 }
@@ -128,7 +128,7 @@ async function createConversation(name: string, refreshToken: string) {
   }, {
     headers: {
       Authorization: `Bearer ${token}`,
-      Referer: 'https://kimi.moonshot.cn',
+      Referer: 'https://kimi.moonshot.cn/',
       ...FAKE_HEADERS
     },
     timeout: 15000,
@@ -177,6 +177,10 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
     const refFileUrls = extractRefFileUrls(messages);
     const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
 
+    // 伪装调用获取用户信息
+    fakeRequest(refreshToken)
+      .catch(err => logger.error(err));
+
     // 创建会话
     const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
 
@@ -210,7 +214,7 @@ async function createCompletion(messages: any[], refreshToken: string, useSearch
     return answer;
   })()
     .catch(err => {
-      if(retryCount < MAX_RETRY_COUNT) {
+      if (retryCount < MAX_RETRY_COUNT) {
         logger.error(`Stream response error: ${err.message}`);
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
@@ -237,6 +241,10 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
     // 提取引用文件URL并上传kimi获得引用的文件ID列表
     const refFileUrls = extractRefFileUrls(messages);
     const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
+
+    // 伪装调用获取用户信息
+    fakeRequest(refreshToken)
+      .catch(err => logger.error(err));
 
     // 创建会话
     const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
@@ -268,7 +276,7 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
     });
   })()
     .catch(err => {
-      if(retryCount < MAX_RETRY_COUNT) {
+      if (retryCount < MAX_RETRY_COUNT) {
         logger.error(`Stream response error: ${err.message}`);
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
@@ -278,6 +286,38 @@ async function createCompletionStream(messages: any[], refreshToken: string, use
       }
       throw err;
     });
+}
+
+/**
+ * 调用一些接口伪装访问
+ * 
+ * 随机挑一个
+ * 
+ * @param refreshToken 用于刷新access_token的refresh_token
+ */
+async function fakeRequest(refreshToken: string) {
+  const token = await acquireToken(refreshToken);
+  const options =  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Referer: `https://kimi.moonshot.cn/`,
+      ...FAKE_HEADERS
+    }
+  };
+  await [
+    () => axios.get('https://kimi.moonshot.cn/api/user', options),
+    () => axios.get('https://kimi.moonshot.cn/api/chat_1m/user/status', options),
+    () => axios.post('https://kimi.moonshot.cn/api/chat/list', {
+      offset: 0,
+      size: 50
+    }, options),
+    () => axios.post('https://kimi.moonshot.cn/api/show_case/list', {
+      offset: 0,
+      size: 4,
+      enable_cache: true,
+      order: "asc"
+    }, options)
+  ][Math.floor(Math.random() * 4)]();
 }
 
 /**
@@ -356,7 +396,7 @@ async function preSignUrl(filename: string, refreshToken: string) {
     timeout: 15000,
     headers: {
       Authorization: `Bearer ${token}`,
-      Referer: `https://kimi.moonshot.cn`,
+      Referer: `https://kimi.moonshot.cn/`,
       ...FAKE_HEADERS
     },
     validateStatus: () => true
@@ -437,7 +477,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     headers: {
       'Content-Type': mimeType,
       Authorization: `Bearer ${token}`,
-      Referer: `https://kimi.moonshot.cn`,
+      Referer: `https://kimi.moonshot.cn/`,
       ...FAKE_HEADERS
     },
     validateStatus: () => true
@@ -453,7 +493,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   }, {
     headers: {
       Authorization: `Bearer ${token}`,
-      Referer: `https://kimi.moonshot.cn`,
+      Referer: `https://kimi.moonshot.cn/`,
       ...FAKE_HEADERS
     }
   });
@@ -466,7 +506,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   }, {
     headers: {
       Authorization: `Bearer ${token}`,
-      Referer: `https://kimi.moonshot.cn`,
+      Referer: `https://kimi.moonshot.cn/`,
       ...FAKE_HEADERS
     }
   });
