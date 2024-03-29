@@ -401,3 +401,7 @@ keepalive_timeout 120;
 ### Token统计
 
 由于推理侧不再kimi-free-api，因此token不可统计，将以固定数字返回!!!!!
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/#LLM-Red-Team/kimi-free-api&Date)
