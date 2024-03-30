@@ -9,7 +9,9 @@
 
 与ChatGPT接口完全兼容。
 
-还有以下两个free-api欢迎关注：
+还有以下四个free-api欢迎关注：
+
+阶跃星辰 (跃问StepChat) 接口转API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
 阿里通义 (Qwen) 接口转API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
 
@@ -398,7 +400,7 @@ keepalive_timeout 120;
 
 ### Token统计
 
-由于推理侧不再kimi-free-api，因此token不可统计，将以固定数字返回!!!!!
+由于推理侧不在kimi-free-api，因此token不可统计，将以固定数字返回!!!!!
 
 ## Star History
 
