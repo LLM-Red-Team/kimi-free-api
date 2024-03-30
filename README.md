@@ -92,7 +92,7 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ### 多账号接入
 
-目前kimi限制普通账号每3小时内只能进行30轮长文本的问答，你可以通过提供多个账号的refresh_token并使用`,`拼接提供：
+目前kimi限制普通账号每3小时内只能进行30轮长文本的问答（短文本不限），你可以通过提供多个账号的refresh_token并使用`,`拼接提供：
 
 `Authorization: Bearer TOKEN1,TOKEN2,TOKEN3`
 
