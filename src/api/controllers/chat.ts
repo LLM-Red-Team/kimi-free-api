@@ -299,7 +299,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
  */
 async function fakeRequest(refreshToken: string) {
   const token = await acquireToken(refreshToken);
-  const options =  {
+  const options = {
     headers: {
       Authorization: `Bearer ${token}`,
       Referer: `https://kimi.moonshot.cn/`,
@@ -570,8 +570,9 @@ async function receiveStream(model: string, convId: string, stream: any) {
         if (_.isError(result))
           throw new Error(`Stream response invalid: ${event.data}`);
         // 处理消息
-        if (result.event == 'cmpl') {
-          data.choices[0].message.content += result.text;
+        if (result.event == 'cmpl' && result.text) {
+          const exceptCharIndex = result.text.indexOf("�");
+          data.choices[0].message.content += result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
         }
         // 处理结束或错误
         else if (result.event == 'all_done' || result.event == 'error') {
@@ -632,12 +633,14 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         throw new Error(`Stream response invalid: ${event.data}`);
       // 处理消息
       if (result.event == 'cmpl') {
+        const exceptCharIndex = result.text.indexOf("�");
+        const chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
           object: 'chat.completion.chunk',
           choices: [
-            { index: 0, delta: { content: (searchFlag ? '\n' : '') + result.text }, finish_reason: null }
+            { index: 0, delta: { content: (searchFlag ? '\n' : '') + chunk }, finish_reason: null }
           ],
           created
         })}\n\n`;
