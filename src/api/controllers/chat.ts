@@ -347,6 +347,7 @@ function extractRefFileUrls(messages: any[]) {
         urls.push(v['image_url']['url']);
     });
   }
+  logger.info("本次请求上传：" + urls.length + "个文件");
   return urls;
 }
 
@@ -361,24 +362,53 @@ function extractRefFileUrls(messages: any[]) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  */
 function messagesPrepare(messages: any[]) {
-  // 只保留最新消息以及不包含"type": "image_url"或"type": "file"的消息
-  let validMessages = messages.filter((message, index) => {
-    if (index === messages.length - 1) return true;
-    if (!Array.isArray(message.content)) return true;
-    // 不含"type": "image_url"或"type": "file"的消息保留
-    return !message.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
+  // 先剔除所有的 base64 数据
+  let validMessages = messages.map((message) => {
+    if (Array.isArray(message.content)) {
+      message.content = message.content.filter(v => {
+        if (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])) {
+          // 如果内容是 base64 数据，就剔除
+          return !util.isBASE64Data(v['url']);
+        }
+        // 如果不是 base64 数据，就保留
+        return true;
+      });
+    }
+    return message;
   });
+
+  // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
+  let latestMessage = validMessages[validMessages.length - 1];
+  let hasFileOrImage = Array.isArray(latestMessage.content)
+    && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
+  if (hasFileOrImage) {
+    let newFileMessage = {
+      "content": "关注用户最新发送文件和消息结尾",
+      "role": "system"
+    };
+    validMessages.splice(validMessages.length - 1, 0, newFileMessage);
+    logger.info("检查注入文件消息");
+  } else {
+    let newTextMessage = {
+      "content": "关注用户消息的结尾",
+      "role": "system"
+    };
+    validMessages.splice(validMessages.length - 1, 0, newTextMessage);
+    logger.info("检查注入文本消息");
+  }
 
   const content = validMessages.reduce((content, message) => {
     if (Array.isArray(message.content)) {
       return message.content.reduce((_content, v) => {
         if (!_.isObject(v) || v['type'] != 'text')
           return _content;
-        return _content + (v['text'] || '');
+        return _content + ('user:' + v['text'] || '') + "\n";
       }, content);
     }
     return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
   }, '');
+
+  logger.info("上传消息：" + content);
   return [
     { role: 'user', content }
   ]
