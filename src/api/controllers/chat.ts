@@ -383,18 +383,18 @@ function messagesPrepare(messages: any[]) {
     && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
   if (hasFileOrImage) {
     let newFileMessage = {
-      "content": "关注用户最新发送文件和消息结尾",
+      "content": "关注用户最新发送的文件和消息",
       "role": "system"
     };
     validMessages.splice(validMessages.length - 1, 0, newFileMessage);
-    logger.info("检查注入文件消息");
+    logger.info("注入提升尾部文件注意力system prompt");
   } else {
     let newTextMessage = {
-      "content": "关注用户消息的结尾",
+      "content": "关注用户最新的消息",
       "role": "system"
     };
     validMessages.splice(validMessages.length - 1, 0, newTextMessage);
-    logger.info("检查注入文本消息");
+    logger.info("注入提升尾部消息注意力system prompt");
   }
 
   const content = validMessages.reduce((content, message) => {
@@ -408,7 +408,7 @@ function messagesPrepare(messages: any[]) {
     return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
   }, '');
 
-  logger.info("上传消息：" + content);
+  logger.info("\n对话合并：\n" + content);
   return [
     { role: 'user', content }
   ]
