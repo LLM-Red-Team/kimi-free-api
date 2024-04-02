@@ -347,6 +347,7 @@ function extractRefFileUrls(messages: any[]) {
         urls.push(v['image_url']['url']);
     });
   }
+  logger.info("本次请求上传：" + urls.length + "个文件");
   return urls;
 }
 
@@ -368,6 +369,37 @@ function messagesPrepare(messages: any[]) {
     // 不含"type": "image_url"或"type": "file"的消息保留
     return !message.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
   });
+
+  // 检查最新消息是否含有"type": "image_url"或"type": "file",如果有则注入消息
+  let latestMessage = validMessages[validMessages.length - 1];
+  let hasFileOrImage = Array.isArray(latestMessage.content)
+    && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
+  if (hasFileOrImage) {
+
+    // 对 latestMessage.content 进行过滤，只保留"type": "text"的内容
+    // latestMessage.content = latestMessage.content.filter(v => typeof v === 'object' && v['type'] === 'text');
+
+    // 对 latestMessage.content 进行过滤，只保留不含base64的内容
+    latestMessage.content = latestMessage.content.filter(v => {
+      if (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])) {
+        return !util.isBASE64Data(v['image_url']['url']);
+      }
+      return true;
+    });
+    let newFileMessage = {
+      "content": "关注用户最新发送文件和消息结尾",
+      "role": "system"
+    };
+    validMessages.splice(validMessages.length - 1, 0, newFileMessage);
+    logger.info("检查注入文件消息");
+  } else {
+    let newTextMessage = {
+      "content": "关注用户消息的结尾",
+      "role": "system"
+    };
+    validMessages.splice(validMessages.length - 1, 0, newTextMessage);
+    logger.info("检查注入文本消息");
+  }
 
   const content = validMessages.reduce((content, message) => {
     if (Array.isArray(message.content)) {
