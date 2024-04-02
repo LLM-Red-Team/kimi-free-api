@@ -411,6 +411,8 @@ function messagesPrepare(messages: any[]) {
     }
     return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
   }, '');
+
+  logger.info("本次上传消息：" + { role: 'user', content });
   return [
     { role: 'user', content }
   ]
