@@ -516,8 +516,8 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     data: fileData,
     // 100M限制
     maxBodyLength: FILE_MAX_SIZE,
-    // 60秒超时
-    timeout: 60000,
+    // 120秒超时
+    timeout: 120000,
     headers: {
       'Content-Type': mimeType,
       Authorization: `Bearer ${token}`,
