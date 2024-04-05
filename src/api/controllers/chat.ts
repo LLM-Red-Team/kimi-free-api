@@ -389,7 +389,7 @@ function messagesPrepare(messages: any[]) {
         return _content + `\n${message.role || "user"}:${v["text"] || ""}`;
       }, content);
     }
-    return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
+    return content += `\n${message.role || 'user'}:${wrapUrlsToTags(message.content)}`;
   }, '');
 
   logger.info("\n对话合并：" + content);
