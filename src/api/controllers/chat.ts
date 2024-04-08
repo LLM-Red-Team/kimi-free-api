@@ -366,20 +366,23 @@ function messagesPrepare(messages: any[]) {
   let latestMessage = messages[messages.length - 1];
   let hasFileOrImage = Array.isArray(latestMessage.content)
     && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
-  if (hasFileOrImage) {
-    let newFileMessage = {
-      "content": "关注用户最新发送文件和消息",
-      "role": "system"
-    };
-    messages.splice(messages.length - 1, 0, newFileMessage);
-    logger.info("注入提升尾部文件注意力system prompt");
-  } else if (messages.length > 2) {
-    let newTextMessage = {
-      "content": "关注用户最新的消息",
-      "role": "system"
-    };
-    messages.splice(messages.length - 1, 0, newTextMessage);
-    logger.info("注入提升尾部消息注意力system prompt");
+  // 第二轮开始注入system prompt
+  if (messages.length > 2) {
+    if (hasFileOrImage) {
+      let newFileMessage = {
+        "content": "关注用户最新发送文件和消息",
+        "role": "system"
+      };
+      messages.splice(messages.length - 1, 0, newFileMessage);
+      logger.info("注入提升尾部文件注意力system prompt");
+    } else {
+      let newTextMessage = {
+        "content": "关注用户最新的消息",
+        "role": "system"
+      };
+      messages.splice(messages.length - 1, 0, newTextMessage);
+      logger.info("注入提升尾部消息注意力system prompt");
+    }
   }
 
   const content = messages.reduce((content, message) => {
