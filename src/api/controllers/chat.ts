@@ -373,7 +373,7 @@ function messagesPrepare(messages: any[]) {
     };
     messages.splice(messages.length - 1, 0, newFileMessage);
     logger.info("注入提升尾部文件注意力system prompt");
-  } else {
+  } else if (messages.length > 2) {
     let newTextMessage = {
       "content": "关注用户最新的消息",
       "role": "system"
