@@ -15,7 +15,7 @@ export default class FailureBody extends Body {
         else if(error instanceof APIException || error instanceof Exception)
             ({ errcode, errmsg, data, httpStatusCode } = error);
         else if(_.isError(error))
-            error = new Exception(EX.SYSTEM_ERROR, error.message);
+            ({ errcode, errmsg, data, httpStatusCode } = new Exception(EX.SYSTEM_ERROR, error.message));
         super({
             code: errcode || -1,
             message: errmsg || 'Internal error',
