@@ -55,23 +55,23 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ## 效果示例
 
-### 验明正身
+### 验明正身Demo
 
 ![验明正身](./doc/example-1.png)
 
-### 多轮对话
+### 多轮对话Demo
 
 ![多轮对话](./doc/example-6.png)
 
-### 联网搜索
+### 联网搜索Demo
 
 ![联网搜索](./doc/example-2.png)
 
-### 长文档解读
+### 长文档解读Demo
 
 ![长文档解读](./doc/example-5.png)
 
-### 图像解析
+### 图像解析Demo
 
 ![图像解析](./doc/example-3.png)
 
