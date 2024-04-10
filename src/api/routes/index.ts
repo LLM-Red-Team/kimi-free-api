@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import Response from '@/lib/response/Response.ts';
 import chat from "./chat.ts";
 import ping from "./ping.ts";
+import token from './token.ts';
 
 export default [
     {
@@ -19,5 +20,6 @@ export default [
         }
     },
     chat,
-    ping
+    ping,
+    token
 ];

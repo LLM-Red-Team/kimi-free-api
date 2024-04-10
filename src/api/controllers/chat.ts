@@ -739,9 +739,35 @@ function tokenSplit(authorization: string) {
   return authorization.replace('Bearer ', '').split(',');
 }
 
+/**
+ * 获取Token存活状态
+ */
+async function getTokenLiveStatus(refreshToken: string) {
+  const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
+    headers: {
+      Authorization: `Bearer ${refreshToken}`,
+      Referer: 'https://kimi.moonshot.cn/',
+      ...FAKE_HEADERS
+    },
+    timeout: 15000,
+    validateStatus: () => true
+  });
+  try {
+    const {
+      access_token,
+      refresh_token
+    } = checkResult(result, refreshToken);
+    return !!(access_token && refresh_token)
+  }
+  catch(err) {
+    return false;
+  }
+}
+
 export default {
   createConversation,
   createCompletion,
   createCompletionStream,
+  getTokenLiveStatus,
   tokenSplit
 };
