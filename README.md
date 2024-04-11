@@ -1,5 +1,11 @@
 # KIMI AI Free 服务
 
+
+<hr>
+
+<span>[ 中文 | <a href="README_EN.md">English</a> ]</span>
+
+
 ![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/github/stars/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
