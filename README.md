@@ -34,6 +34,7 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
   * [多账号接入](#多账号接入)
 * [Docker部署](#Docker部署)
   * [Docker-compose部署](#Docker-compose部署)
+* [Vercel部署](#Render部署)
 * [Vercel部署](#Vercel部署)
 * [原生部署](#原生部署)
 * [接口列表](#接口列表)
@@ -62,7 +63,7 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ## 测试接口
 
-此接口实例部署在[Render](#render部署)上面，遇到容器回收可能导致响应速度较慢，仅供测试，建议自行部署。
+此接口实例部署在[Render](#Render部署)上面，遇到容器回收可能导致响应速度较慢，仅供测试，建议自行部署。
 
 https://kimi-free-api-nut5.onrender.com
 
