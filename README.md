@@ -60,6 +60,12 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
 
 https://udify.app/chat/Po0F6BMJ15q5vu2P
 
+## 测试接口
+
+此接口实例部署在[Render](#render部署)上面，遇到容器回收可能导致响应速度较慢，仅供测试，建议自行部署。
+
+https://kimi-free-api-nut5.onrender.com
+
 ## 效果示例
 
 ### 验明正身Demo
@@ -150,9 +156,22 @@ services:
       - TZ=Asia/Shanghai
 ```
 
+### Render部署
+
+**注意：部分部署区域可能无法连接kimi，如容器日志出现请求超时或无法连接（新加坡实测不可用）请切换其他区域部署！**
+**注意：免费账户的容器实例将在一段时间不活动时自动停止运行，这会导致下次请求时遇到50秒或更长的延迟，建议通过 GET `/ping` 请求来维持容器活动**
+
+1. fork本项目到你的github账号下。
+
+2. 访问 [Render](https://dashboard.render.com/) 并登录你的github账号。
+
+3. 构建你的 Web Service（New+ -> Build and deploy from a Git repository -> Connect你fork的项目 -> 选择部署区域 -> 选择实例类型为Free -> Create Web Service）。
+
+4. 等待构建完成后，复制分配的域名并拼接URL访问即可。
+
 ### Vercel部署
 
-**注意：Vercel免费账户的请求响应超时时间为10秒，但接口响应通常较久，可能会遇到Vercel返回的504超时错误**
+**注意：Vercel免费账户的请求响应超时时间为10秒，但接口响应通常较久，可能会遇到Vercel返回的504超时错误！**
 
 点击按钮快速部署：
 
