@@ -9,13 +9,15 @@ import { format as dateFormat } from 'date-fns';
 import config from './config.ts';
 import util from './util.ts';
 
+const isVercelEnv = process.env.VERCEL;
+
 class LogWriter {
 
     #buffers = [];
 
     constructor() {
-        fs.ensureDirSync(config.system.logDirPath);
-        this.work();
+        !isVercelEnv && fs.ensureDirSync(config.system.logDirPath);
+        !isVercelEnv && this.work();
     }
 
     push(content) {
@@ -24,16 +26,16 @@ class LogWriter {
     }
 
     writeSync(buffer) {
-        fs.appendFileSync(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), buffer);
+        !isVercelEnv && fs.appendFileSync(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), buffer);
     }
 
     async write(buffer) {
-        await fs.appendFile(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), buffer);
+        !isVercelEnv && await fs.appendFile(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), buffer);
     }
 
     flush() {
         if(!this.#buffers.length) return;
-        fs.appendFileSync(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), Buffer.concat(this.#buffers));
+        !isVercelEnv && fs.appendFileSync(path.join(config.system.logDirPath, `/${util.getDateString()}.log`), Buffer.concat(this.#buffers));
     }
 
     work() {

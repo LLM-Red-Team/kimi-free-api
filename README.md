@@ -28,6 +28,7 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
   * [多账号接入](#多账号接入)
 * [Docker部署](#Docker部署)
   * [Docker-compose部署](#Docker-compose部署)
+* [Vercel部署](#Vercel部署)
 * [原生部署](#原生部署)
 * [接口列表](#接口列表)
   * [对话补全](#对话补全)
@@ -142,6 +143,14 @@ services:
     environment:
       - TZ=Asia/Shanghai
 ```
+
+### Vercel部署
+
+**注意：Vercel免费账户的请求响应超时时间为10秒，但接口响应通常较久，可能会遇到Vercel返回的504超时错误**
+
+点击按钮快速部署：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/LLM-Red-Team/kimi-free-api)
 
 ## 原生部署
 
