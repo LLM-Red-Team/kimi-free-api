@@ -34,7 +34,7 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
   * [多账号接入](#多账号接入)
 * [Docker部署](#Docker部署)
   * [Docker-compose部署](#Docker-compose部署)
-* [Vercel部署](#Render部署)
+* [Render部署](#Render部署)
 * [Vercel部署](#Vercel部署)
 * [原生部署](#原生部署)
 * [接口列表](#接口列表)
