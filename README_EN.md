@@ -21,20 +21,21 @@ Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/
 
 ## Table of Contents
 
-* [Disclaimer](#Disclaimer)
-* [Online Experience](#Online-Experience)
-* [Effect Examples](#Effect-Examples)
-* [Access Preparation](#Access-Preparation)
-  * [Multi-Account Access](#Multi-Account-Access)
-* [Docker Deployment](#Docker-Deployment)
-  * [Docker-compose Deployment](#Docker-compose-Deployment)
-* [Native Deployment](#Native-Deployment)
-* [API List](#API-List)
-  * [Dialogue Completion](#Dialogue-Completion)
-  * [Document Reading](#Document-Reading)
-  * [Image Analysis](#Image-Analysis)
-* [Precautions](#Precautions)
-  * [Nginx Reverse Proxy Optimization](#Nginx-Reverse-Proxy-Optimization)
+* [Disclaimer](#disclaimer)
+*[Online experience](#在线experience)
+* [Effect Example](#EffectExample)
+* [Access preparation](#access preparation)
+   * [Multiple account access](#multiple account access)
+* [Docker Deployment](#DockerDeployment)
+   * [Docker-compose deployment](#Docker-compose deployment)
+* [Native Deployment](#nativedeployment)
+* [Interface List](#Interface List)
+   * [Dialogue completion](#dialogue completion)
+   * [Document Interpretation](#document interpretation)
+   * [Image analysis](#imageanalysis)
+   * [refresh_token survival detection](#refresh_token survival detection)
+* [Note](# NOTE)
+   * [Nginx anti-generation optimization](#Nginx anti-generation optimization)
 
 ## Disclaimer
 
@@ -376,6 +377,26 @@ Response data:
          "total_tokens": 2
      },
      "created": 1710123627
+}
+
+```
+### refresh_token survival detection
+
+Check whether refresh_token is alive. If live is not true, otherwise it is false. Please do not call this interface frequently (less than 10 minutes).
+
+**POST /token/check**
+
+Request data:
+```json
+{
+     "token": "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+Response data:
+```json
+{
+     "live": true
 }
 ```
 
