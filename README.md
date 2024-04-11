@@ -174,9 +174,15 @@ services:
 
 **注意：Vercel免费账户的请求响应超时时间为10秒，但接口响应通常较久，可能会遇到Vercel返回的504超时错误！**
 
-点击按钮快速部署：
+请先确保安装了Node.js环境。
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/LLM-Red-Team/kimi-free-api)
+```shell
+npm i -g vercel --registry http://registry.npmmirror.com
+vercel login
+git clone https://github.com/LLM-Red-Team/kimi-free-api
+cd kimi-free-api
+vercel --prod
+```
 
 ## 原生部署
 
