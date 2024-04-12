@@ -392,7 +392,7 @@ function messagesPrepare(messages: any[]) {
         return _content + `${message.role || "user"}:${v["text"] || ""}\n`;
       }, content);
     }
-    return content += `${message.role || 'user'}:${wrapUrlsToTags(message.content)}\n`;
+    return content += `${message.role || 'user'}:${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
   }, '');
   logger.info("\n对话合并：\n" + content);
   return [
