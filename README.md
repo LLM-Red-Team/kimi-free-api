@@ -186,6 +186,12 @@ cd kimi-free-api
 vercel --prod
 ```
 
+### Zeabur 部署
+
+**注意：免费账户的容器实例可能无法稳定运行**
+
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
+
 ## 原生部署
 
 请准备一台具有公网IP的服务器并将8000端口开放。
