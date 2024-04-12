@@ -193,6 +193,10 @@ Out of service
 pm2 stop kimi-free-api
 ```
 
+## Zeabur Deployment
+
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
+
 ## interface list
 
 Currently, the `/v1/chat/completions` interface compatible with openai is supported. You can use the client access interface compatible with openai or other clients, or use online services such as [dify](https://dify.ai/) Access and use.
