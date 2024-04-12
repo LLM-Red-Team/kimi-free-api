@@ -17,6 +17,8 @@ Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwe
 
 ZhipuAI (Wisdom Map Clear Words) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
+MetaAI (metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+
 Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
 ## Table of Contents
