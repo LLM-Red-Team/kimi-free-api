@@ -65,9 +65,9 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ## 测试接口
 
-此接口实例部署在[Render](#Render部署)上面，遇到容器回收可能导致响应速度较慢，仅供测试，建议自行部署。
+此接口实例部署在[Zeabur](#Zeabur)上面，遇到容器回收可能导致响应速度较慢，仅供测试，建议自行部署。
 
-https://kimi-free-api-nut5.onrender.com
+[https://kimi-free-api.zeabur.app](https://kimi-free-api.zeabur.app)
 
 ## 效果示例
 
@@ -186,7 +186,7 @@ cd kimi-free-api
 vercel --prod
 ```
 
-### Zeabur 部署
+### Zeabur部署
 
 **注意：免费账户的容器实例可能无法稳定运行**
 
