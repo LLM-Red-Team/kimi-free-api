@@ -24,15 +24,15 @@ const FAKE_HEADERS = {
   'Accept-Encoding': 'gzip, deflate, br, zstd',
   'Accept-Language': 'zh-CN,zh;q=0.9',
   'Origin': 'https://kimi.moonshot.cn',
-  // 'Cookie': util.generateCookie(),
+  'Cookie': util.generateCookie(),
   'R-Timezone': 'Asia/Shanghai',
-  'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+  'Sec-Ch-Ua': '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
   'Sec-Ch-Ua-Mobile': '?0',
   'Sec-Ch-Ua-Platform': '"Windows"',
   'Sec-Fetch-Dest': 'empty',
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
 };
 // 文件最大大小
 const FILE_MAX_SIZE = 100 * 1024 * 1024;
@@ -56,9 +56,21 @@ async function requestToken(refreshToken: string) {
   const result = await (async () => {
     const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
       headers: {
+        Accept: '*/*',
+        'Accept-Encoding': 'gzip, deflate, br, zstd',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
         Authorization: `Bearer ${refreshToken}`,
+        'Cache-Control': 'no-cache',
+        'Cookie': util.generateCookie(),
+        Pragma: 'no-cache',
         Referer: 'https://kimi.moonshot.cn/',
-        ...FAKE_HEADERS
+        'Sec-Ch-Ua': '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
+        'Sec-Ch-Ua-Mobile': '?0',
+        'Sec-Ch-Ua-Platform': '"Windows"',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
       },
       timeout: 15000,
       validateStatus: () => true
@@ -67,7 +79,9 @@ async function requestToken(refreshToken: string) {
       access_token,
       refresh_token
     } = checkResult(result, refreshToken);
+    const { id: userId } = await getUserInfo(access_token, refreshToken);
     return {
+      userId,
       accessToken: access_token,
       refreshToken: refresh_token,
       refreshTime: util.unixTimestamp() + ACCESS_TOKEN_EXPIRES
@@ -100,7 +114,7 @@ async function requestToken(refreshToken: string) {
  * 
  * @param refreshToken 用于刷新access_token的refresh_token
  */
-async function acquireToken(refreshToken: string): Promise<string> {
+async function acquireToken(refreshToken: string): Promise<any> {
   let result = accessTokenMap.get(refreshToken);
   if (!result) {
     result = await requestToken(refreshToken);
@@ -110,7 +124,26 @@ async function acquireToken(refreshToken: string): Promise<string> {
     result = await requestToken(refreshToken);
     accessTokenMap.set(refreshToken, result);
   }
-  return result.accessToken;
+  return result;
+}
+
+/**
+ * 获取用户信息
+ * 
+ * @param refreshToken 用于刷新access_token的refresh_token
+ */
+async function getUserInfo(accessToken: string, refreshToken: string) {
+  const result = await axios.get('https://kimi.moonshot.cn/api/user', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Referer: 'https://kimi.moonshot.cn/',
+      'X-Traffic-Id': `7${util.generateRandomString({ length: 18, charset: 'numeric' })}`,
+      ...FAKE_HEADERS
+    },
+    timeout: 15000,
+    validateStatus: () => true
+  });
+  return checkResult(result, refreshToken);
 }
 
 /**
@@ -121,14 +154,18 @@ async function acquireToken(refreshToken: string): Promise<string> {
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function createConversation(name: string, refreshToken: string) {
-  const token = await acquireToken(refreshToken);
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
   const result = await axios.post('https://kimi.moonshot.cn/api/chat', {
-    name,
-    is_example: false
+    is_example: false,
+    name
   }, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: 'https://kimi.moonshot.cn/',
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
     timeout: 15000,
@@ -148,11 +185,43 @@ async function createConversation(name: string, refreshToken: string) {
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function removeConversation(convId: string, refreshToken: string) {
-  const token = await acquireToken(refreshToken);
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
   const result = await axios.delete(`https://kimi.moonshot.cn/api/chat/${convId}`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+      'X-Traffic-Id': userId,
+      ...FAKE_HEADERS
+    },
+    timeout: 15000,
+    validateStatus: () => true
+  });
+  checkResult(result, refreshToken);
+}
+
+/**
+ * prompt片段提交
+ * 
+ * @param query prompt
+ * @param refreshToken 用于刷新access_token的refresh_token
+ */
+async function promptSnippetSubmit(query: string, refreshToken: string) {
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
+  const result = await axios.post('https://kimi.moonshot.cn/api/prompt-snippet/instance', {
+    "offset": 0,
+    "size": 10,
+    "query": query.replace('user:', '').replace('assistant:', '')
+  }, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Referer: 'https://kimi.moonshot.cn/',
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
     timeout: 15000,
@@ -183,18 +252,23 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       .catch(err => logger.error(err));
 
     // 创建会话
-    const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
+    const convId = await createConversation("未命名会话", refreshToken);
 
     // 请求流
-    const token = await acquireToken(refreshToken);
+    const {
+      accessToken,
+      userId
+    } = await acquireToken(refreshToken);
+    const sendMessages = messagesPrepare(messages);
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-      messages: messagesPrepare(messages),
+      messages: sendMessages,
       refs,
       use_search: useSearch
     }, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+        'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       },
       // 120秒超时
@@ -210,6 +284,8 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
 
     // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
     removeConversation(convId, refreshToken)
+      .catch(err => console.error(err));
+    promptSnippetSubmit(sendMessages[0].content, refreshToken)
       .catch(err => console.error(err));
 
     return answer;
@@ -249,20 +325,25 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       .catch(err => logger.error(err));
 
     // 创建会话
-    const convId = await createConversation(`cmpl-${util.uuid(false)}`, refreshToken);
+    const convId = await createConversation("未命名会话", refreshToken);
 
     // 请求流
-    const token = await acquireToken(refreshToken);
+    const {
+      accessToken,
+      userId
+    } = await acquireToken(refreshToken);
+    const sendMessages = messagesPrepare(messages);
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-      messages: messagesPrepare(messages),
+      messages: sendMessages,
       refs,
       use_search: useSearch
     }, {
       // 120秒超时
       timeout: 120000,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+        'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       },
       validateStatus: () => true,
@@ -274,6 +355,8 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
       // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
       removeConversation(convId, refreshToken)
+        .catch(err => console.error(err));
+      promptSnippetSubmit(sendMessages[0].content, refreshToken)
         .catch(err => console.error(err));
     });
   })()
@@ -298,11 +381,15 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function fakeRequest(refreshToken: string) {
-  const token = await acquireToken(refreshToken);
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
   const options = {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     }
   };
@@ -392,7 +479,7 @@ function messagesPrepare(messages: any[]) {
         return _content + `${message.role || "user"}:${v["text"] || ""}\n`;
       }, content);
     }
-    return content += `${message.role || 'user'}:${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
+    return content += `${message.role || "user"}:${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
   }, '');
   logger.info("\n对话合并：\n" + content);
   return [
@@ -418,15 +505,19 @@ function wrapUrlsToTags(content: string) {
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function preSignUrl(filename: string, refreshToken: string) {
-  const token = await acquireToken(refreshToken);
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
   const result = await axios.post('https://kimi.moonshot.cn/api/pre-sign-url', {
     action: 'file',
     name: filename
   }, {
     timeout: 15000,
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
     validateStatus: () => true
@@ -495,7 +586,10 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   // 获取文件的MIME类型
   mimeType = mimeType || mime.getType(filename);
   // 上传文件到目标OSS
-  const token = await acquireToken(refreshToken);
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
   let result = await axios.request({
     method: 'PUT',
     url: uploadUrl,
@@ -506,8 +600,9 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     timeout: 120000,
     headers: {
       'Content-Type': mimeType,
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
     validateStatus: () => true
@@ -522,8 +617,9 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     timeout: 15000
   }, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     }
   });
@@ -535,8 +631,9 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     timeout: 120000
   }, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     }
   });
@@ -759,7 +856,7 @@ async function getTokenLiveStatus(refreshToken: string) {
     } = checkResult(result, refreshToken);
     return !!(access_token && refresh_token)
   }
-  catch(err) {
+  catch (err) {
     return false;
   }
 }
