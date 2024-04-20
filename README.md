@@ -425,7 +425,7 @@ Authorization: Bearer [refresh_token]
 
 ### refresh_token存活检测
 
-检测refresh_token是否存活，如果存活live未true，否则为false，请不要频繁（小于10分钟）调用此接口。
+检测refresh_token是否存活，如果存活live为true，否则为false，请不要频繁（小于10分钟）调用此接口。
 
 **POST /token/check**
 
