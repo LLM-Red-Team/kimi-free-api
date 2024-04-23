@@ -435,4 +435,4 @@ Since the inference side is not in kimi-free-api, the token cannot be counted an
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/ #LLM-Red-Team/kimi-free-api&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/#LLM-Red-Team/kimi-free-api&Date)
