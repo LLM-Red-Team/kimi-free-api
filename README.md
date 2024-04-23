@@ -1,8 +1,5 @@
 # KIMI AI Free 服务
 
-
-<hr>
-
 <span>[ 中文 | <a href="README_EN.md">English</a> ]</span>
 
 
