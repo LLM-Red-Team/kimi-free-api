@@ -37,10 +37,11 @@ Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/
 * [Interface List](#Interface-List)
    * [Conversation completion](#conversation-completion)
    * [Document Interpretation](#document-interpretation)
-   * [Image analysis](#imagean-alysis)
+   * [Image analysis](#image-analysis)
    * [refresh_token survival detection](#refresh_token-survival-detection)
-* [Note](#NOTE)
+* [Precautions](#Precautions)
    * [Nginx anti-generation optimization](#Nginx-anti-generation-optimization)
+   * [Token statistics](#Token-statistics)
 
 ## Disclaimer
 
