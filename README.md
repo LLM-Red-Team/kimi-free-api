@@ -46,6 +46,7 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
   * [refresh_token存活检测](#refresh_token存活检测)
 * [注意事项](#注意事项)
   * [Nginx反代优化](#Nginx反代优化)
+  * [Token统计](#Token统计)
 
 ## 免责声明
 
