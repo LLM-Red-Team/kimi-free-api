@@ -18,7 +18,7 @@ Step to the Stars (StepChat) API to API [step-free-api](https://github.com/LLM-R
 
 Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
 
-ZhipuAI (Wisdom Map Clear Words) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
+ZhipuAI (ChatGLM) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
 MetaAI (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
 
