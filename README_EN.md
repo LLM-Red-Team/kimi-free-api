@@ -14,7 +14,7 @@ Fully compatible with the ChatGPT interface.
 
 Also, the following six free APIs are available for your attention:
 
-Step to the Stars (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
+StepFun (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
 Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
 
