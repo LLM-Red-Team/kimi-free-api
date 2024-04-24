@@ -12,7 +12,7 @@ Supports high-speed streaming output, multi-turn dialogues, internet search, lon
 
 Fully compatible with the ChatGPT interface.
 
-Also, the following four free APIs are available for your attention:
+Also, the following six free APIs are available for your attention:
 
 Step to the Stars (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
@@ -20,7 +20,9 @@ Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwe
 
 ZhipuAI (Wisdom Map Clear Words) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
-MetaAI (metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+MetaAI (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+
+Iflytek Spark (Spark) API to API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
 Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
@@ -33,6 +35,7 @@ Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/
    * [Multiple account access](#Multi-Account-Access)
 * [Docker Deployment](#Docker-Deployment)
    * [Docker-compose deployment](#Docker-compose-deployment)
+* [Zeabur Deployment](#Zeabur-Deployment)
 * [Native Deployment](#Native-deployment)
 * [Interface List](#Interface-List)
    * [Conversation completion](#conversation-completion)
@@ -42,7 +45,8 @@ Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/
 * [Precautions](#Precautions)
    * [Nginx anti-generation optimization](#Nginx-anti-generation-optimization)
    * [Token statistics](#Token-statistics)
-
+* [Star History](#star-history)
+  
 ## Disclaimer
 
 **This organization and individuals do not accept any financial donations and transactions. This project is purely for research, communication, and learning purposes!**
@@ -149,6 +153,10 @@ services:
       - TZ=Asia/Shanghai
 ```
 
+## Zeabur Deployment
+
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
+
 ## Native deployment
 
 Please prepare a server with a public IP and open port 8000.
@@ -196,10 +204,6 @@ Out of service
 ```shell
 pm2 stop kimi-free-api
 ```
-
-## Zeabur Deployment
-
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
 
 ## interface list
 
