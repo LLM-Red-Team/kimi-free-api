@@ -1,6 +1,9 @@
 # KIMI AI Free Service
 
-![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)
+
+<hr>
+
+[![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)](LICENSE)
 ![](https://img.shields.io/github/stars/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
@@ -24,20 +27,21 @@ Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/
 ## Table of Contents
 
 * [Disclaimer](#disclaimer)
-*[Online experience](#在线experience)
-* [Effect Example](#EffectExample)
-* [Access preparation](#access preparation)
-   * [Multiple account access](#multiple account access)
-* [Docker Deployment](#DockerDeployment)
-   * [Docker-compose deployment](#Docker-compose deployment)
-* [Native Deployment](#nativedeployment)
-* [Interface List](#Interface List)
-   * [Dialogue completion](#dialogue completion)
-   * [Document Interpretation](#document interpretation)
-   * [Image analysis](#imageanalysis)
-   * [refresh_token survival detection](#refresh_token survival detection)
-* [Note](# NOTE)
-   * [Nginx anti-generation optimization](#Nginx anti-generation optimization)
+* [Online experience](#Online-Experience)
+* [Effect Examples](#Effect-Examples)
+* [Access preparation](#Access-Preparation)
+   * [Multiple account access](#Multi-Account-Access)
+* [Docker Deployment](#Docker-Deployment)
+   * [Docker-compose deployment](#Docker-compose-deployment)
+* [Native Deployment](#Native-deployment)
+* [Interface List](#Interface-List)
+   * [Conversation completion](#conversation-completion)
+   * [Document Interpretation](#document-interpretation)
+   * [Image analysis](#image-analysis)
+   * [refresh_token survival detection](#refresh_token-survival-detection)
+* [Precautions](#Precautions)
+   * [Nginx anti-generation optimization](#Nginx-anti-generation-optimization)
+   * [Token statistics](#Token-statistics)
 
 ## Disclaimer
 
@@ -431,4 +435,4 @@ Since the inference side is not in kimi-free-api, the token cannot be counted an
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/ #LLM-Red-Team/kimi-free-api&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/#LLM-Red-Team/kimi-free-api&Date)
