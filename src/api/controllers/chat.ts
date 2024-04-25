@@ -609,35 +609,49 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   });
   checkResult(result, refreshToken);
 
-  // 获取文件上传结果
-  result = await axios.post('https://kimi.moonshot.cn/api/file', {
-    type: 'file',
-    name: filename,
-    object_name: objectName,
-    timeout: 15000
-  }, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Referer: `https://kimi.moonshot.cn/`,
-      'X-Traffic-Id': userId,
-      ...FAKE_HEADERS
-    }
-  });
-  const { id: fileId } = checkResult(result, refreshToken);
+  let fileId, status, startTime = Date.now();
+  while (status != 'initialized') {
+    if (Date.now() - startTime > 30000)
+      throw new Error('文件等待处理超时');
+    // 获取文件上传结果
+    result = await axios.post('https://kimi.moonshot.cn/api/file', {
+      type: 'file',
+      name: filename,
+      object_name: objectName,
+      timeout: 15000
+    }, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Referer: `https://kimi.moonshot.cn/`,
+        'X-Traffic-Id': userId,
+        ...FAKE_HEADERS
+      }
+    });
+    ({ id: fileId, status } = checkResult(result, refreshToken));
+  }
 
-  // 处理文件转换
-  result = await axios.post('https://kimi.moonshot.cn/api/file/parse_process', {
-    ids: [fileId],
-    timeout: 120000
-  }, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Referer: `https://kimi.moonshot.cn/`,
-      'X-Traffic-Id': userId,
-      ...FAKE_HEADERS
-    }
-  });
-  checkResult(result, refreshToken);
+  startTime = Date.now();
+  let parseFinish = false;
+  while (!parseFinish) {
+    if (Date.now() - startTime > 30000)
+      throw new Error('文件等待处理超时');
+    // 处理文件转换
+    parseFinish = await new Promise(resolve => {
+      axios.post('https://kimi.moonshot.cn/api/file/parse_process', {
+        ids: [fileId],
+        timeout: 120000
+      }, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Referer: `https://kimi.moonshot.cn/`,
+          'X-Traffic-Id': userId,
+          ...FAKE_HEADERS
+        }
+      })
+      .then(() => resolve(true))
+      .catch(() => resolve(false));
+    });
+  }
 
   return fileId;
 }
