@@ -24,7 +24,7 @@ MetaAI (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/met
 
 Iflytek Spark (Spark) API to API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
-Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
+Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
 ## Table of Contents
 
