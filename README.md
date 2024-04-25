@@ -6,7 +6,7 @@
 <span>[ 中文 | <a href="README_EN.md">English</a> ]</span>
 
 
-![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)
+[![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)](LICENSE)
 ![](https://img.shields.io/github/stars/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
@@ -15,15 +15,17 @@
 
 与ChatGPT接口完全兼容。
 
-还有以下五个free-api欢迎关注：
+还有以下六个free-api欢迎关注：
 
 阶跃星辰 (跃问StepChat) 接口转API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
 阿里通义 (Qwen) 接口转API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
 
-ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
+智谱AI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
-秘塔AI (metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+秘塔AI (Metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+
+讯飞星火（Spark）接口转API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
 聆心智能 (Emohaa) 接口转API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
@@ -38,6 +40,7 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
   * [Docker-compose部署](#Docker-compose部署)
 * [Render部署](#Render部署)
 * [Vercel部署](#Vercel部署)
+* [Zeabur部署](#Zeabur部署)
 * [原生部署](#原生部署)
 * [接口列表](#接口列表)
   * [对话补全](#对话补全)
@@ -46,6 +49,8 @@ ZhipuAI (智谱清言) 接口转API [glm-free-api](https://github.com/LLM-Red-Te
   * [refresh_token存活检测](#refresh_token存活检测)
 * [注意事项](#注意事项)
   * [Nginx反代优化](#Nginx反代优化)
+  * [Token统计](#Token统计)
+* [Star History](#star-history)
 
 ## 免责声明
 

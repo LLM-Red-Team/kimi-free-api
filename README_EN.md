@@ -1,6 +1,9 @@
 # KIMI AI Free Service
 
-![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)
+
+<hr>
+
+[![](https://img.shields.io/github/license/llm-red-team/kimi-free-api.svg)](LICENSE)
 ![](https://img.shields.io/github/stars/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
@@ -9,36 +12,41 @@ Supports high-speed streaming output, multi-turn dialogues, internet search, lon
 
 Fully compatible with the ChatGPT interface.
 
-Also, the following four free APIs are available for your attention:
+Also, the following six free APIs are available for your attention:
 
-Step to the Stars (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
+StepFun (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
 Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwen-free-api)
 
-ZhipuAI (Wisdom Map Clear Words) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
+ZhipuAI (ChatGLM) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
-MetaAI (metaso) 接口转API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+MetaAI (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
 
-Listening Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
+Iflytek Spark (Spark) API to API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
+
+Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
 
 ## Table of Contents
 
 * [Disclaimer](#disclaimer)
-*[Online experience](#在线experience)
-* [Effect Example](#EffectExample)
-* [Access preparation](#access preparation)
-   * [Multiple account access](#multiple account access)
-* [Docker Deployment](#DockerDeployment)
-   * [Docker-compose deployment](#Docker-compose deployment)
-* [Native Deployment](#nativedeployment)
-* [Interface List](#Interface List)
-   * [Dialogue completion](#dialogue completion)
-   * [Document Interpretation](#document interpretation)
-   * [Image analysis](#imageanalysis)
-   * [refresh_token survival detection](#refresh_token survival detection)
-* [Note](# NOTE)
-   * [Nginx anti-generation optimization](#Nginx anti-generation optimization)
-
+* [Online experience](#Online-Experience)
+* [Effect Examples](#Effect-Examples)
+* [Access preparation](#Access-Preparation)
+   * [Multiple account access](#Multi-Account-Access)
+* [Docker Deployment](#Docker-Deployment)
+   * [Docker-compose deployment](#Docker-compose-deployment)
+* [Zeabur Deployment](#Zeabur-Deployment)
+* [Native Deployment](#Native-deployment)
+* [Interface List](#Interface-List)
+   * [Conversation completion](#conversation-completion)
+   * [Document Interpretation](#document-interpretation)
+   * [Image analysis](#image-analysis)
+   * [refresh_token survival detection](#refresh_token-survival-detection)
+* [Precautions](#Precautions)
+   * [Nginx anti-generation optimization](#Nginx-anti-generation-optimization)
+   * [Token statistics](#Token-statistics)
+* [Star History](#star-history)
+  
 ## Disclaimer
 
 **This organization and individuals do not accept any financial donations and transactions. This project is purely for research, communication, and learning purposes!**
@@ -145,6 +153,10 @@ services:
       - TZ=Asia/Shanghai
 ```
 
+## Zeabur Deployment
+
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
+
 ## Native deployment
 
 Please prepare a server with a public IP and open port 8000.
@@ -192,10 +204,6 @@ Out of service
 ```shell
 pm2 stop kimi-free-api
 ```
-
-## Zeabur Deployment
-
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
 
 ## interface list
 
@@ -431,4 +439,4 @@ Since the inference side is not in kimi-free-api, the token cannot be counted an
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/ #LLM-Red-Team/kimi-free-api&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=LLM-Red-Team/kimi-free-api&type=Date)](https://star-history.com/#LLM-Red-Team/kimi-free-api&Date)
