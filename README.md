@@ -244,7 +244,7 @@ pm2 stop kimi-free-api
 
 ## 推荐使用客户端
 
-使用以下二次开发客户端接入free-api系列项目更快更简单！
+使用以下二次开发客户端接入free-api系列项目更快更简单，支持文档/图像上传！
 
 由 [Clivia](https://github.com/Yanyutin753/lobe-chat) 二次开发的LobeChat [https://github.com/Yanyutin753/lobe-chat](https://github.com/Yanyutin753/lobe-chat)
 
