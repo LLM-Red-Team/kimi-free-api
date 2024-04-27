@@ -20,7 +20,7 @@ Ali Tongyi (Qwen) API to API [qwen-free-api](https://github.com/LLM-Red-Team/qwe
 
 ZhipuAI (ChatGLM) API to API [glm-free-api](https://github.com/LLM-Red-Team/glm-free-api)
 
-MetaAI (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
+Meta Sota (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/metaso-free-api)
 
 Iflytek Spark (Spark) API to API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
