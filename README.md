@@ -262,6 +262,9 @@ Authorization: Bearer [refresh_token]
 {
     // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
     "model": "kimi",
+    // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大Token数限制
+    // 如果您想获得原生的多轮对话体验，可以传入首轮消息获得的id，来接续上下文，注意如果使用这个，首轮必须传none，否则第二轮会空响应！
+    // "conversation_id": "cnndivilnl96vah411dg",
     "messages": [
         {
             "role": "user",
@@ -278,6 +281,7 @@ Authorization: Bearer [refresh_token]
 响应数据：
 ```json
 {
+    // 如果想获得原生多轮对话体验，此id，你可以传入到下一轮对话的conversation_id来接续上下文
     "id": "cnndivilnl96vah411dg",
     "model": "kimi",
     "object": "chat.completion",
