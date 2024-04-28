@@ -237,9 +237,10 @@ async function promptSnippetSubmit(query: string, refreshToken: string) {
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
  * @param useSearch 是否开启联网搜索
+ * @param refConvId 引用会话ID
  * @param retryCount 重试次数
  */
-async function createCompletion(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
+async function createCompletion(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, refConvId?: string, retryCount = 0) {
   return (async () => {
     logger.info(messages);
 
@@ -252,14 +253,19 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       .catch(err => logger.error(err));
 
     // 创建会话
-    const convId = await createConversation("未命名会话", refreshToken);
+    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation("未命名会话", refreshToken);
 
     // 请求流
     const {
       accessToken,
       userId
     } = await acquireToken(refreshToken);
-    const sendMessages = messagesPrepare(messages);
+    const sendMessages = messagesPrepare(messages, !!refConvId);
+    console.log(convId, {
+      messages: sendMessages,
+      refs,
+      use_search: useSearch
+    });
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
       messages: sendMessages,
       refs,
@@ -268,6 +274,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+        'Priority': 'u=1, i',
         'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       },
@@ -283,7 +290,8 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
     logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
 
     // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
-    removeConversation(convId, refreshToken)
+    // 如果引用会话将不会清除，因为我们不知道什么时候你会结束会话
+    !refConvId && removeConversation(convId, refreshToken)
       .catch(err => console.error(err));
     promptSnippetSubmit(sendMessages[0].content, refreshToken)
       .catch(err => console.error(err));
@@ -296,7 +304,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return createCompletion(model, messages, refreshToken, useSearch, retryCount + 1);
+          return createCompletion(model, messages, refreshToken, useSearch, refConvId, retryCount + 1);
         })();
       }
       throw err;
@@ -310,9 +318,10 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
  * @param useSearch 是否开启联网搜索
+ * @param refConvId 引用会话ID
  * @param retryCount 重试次数
  */
-async function createCompletionStream(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, retryCount = 0) {
+async function createCompletionStream(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, refConvId?: string, retryCount = 0) {
   return (async () => {
     logger.info(messages);
 
@@ -325,14 +334,14 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       .catch(err => logger.error(err));
 
     // 创建会话
-    const convId = await createConversation("未命名会话", refreshToken);
+    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation("未命名会话", refreshToken);
 
     // 请求流
     const {
       accessToken,
       userId
     } = await acquireToken(refreshToken);
-    const sendMessages = messagesPrepare(messages);
+    const sendMessages = messagesPrepare(messages, !!refConvId);
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
       messages: sendMessages,
       refs,
@@ -343,6 +352,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+        'Priority': 'u=1, i',
         'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       },
@@ -354,7 +364,8 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
     return createTransStream(model, convId, result.data, () => {
       logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
       // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
-      removeConversation(convId, refreshToken)
+      // 如果引用会话将不会清除，因为我们不知道什么时候你会结束会话
+      !refConvId && removeConversation(convId, refreshToken)
         .catch(err => console.error(err));
       promptSnippetSubmit(sendMessages[0].content, refreshToken)
         .catch(err => console.error(err));
@@ -366,7 +377,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return createCompletionStream(model, messages, refreshToken, useSearch, retryCount + 1);
+          return createCompletionStream(model, messages, refreshToken, useSearch, refConvId, retryCount + 1);
         })();
       }
       throw err;
@@ -447,8 +458,9 @@ function extractRefFileUrls(messages: any[]) {
  * user:新消息
  * 
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
+ * @param isRefConv 是否为引用会话
  */
-function messagesPrepare(messages: any[]) {
+function messagesPrepare(messages: any[], isRefConv = false) {
   // 注入消息提升注意力
   let latestMessage = messages[messages.length - 1];
   let hasFileOrImage = Array.isArray(latestMessage.content)
@@ -472,16 +484,32 @@ function messagesPrepare(messages: any[]) {
     }
   }
 
-  const content = messages.reduce((content, message) => {
-    if (Array.isArray(message.content)) {
-      return message.content.reduce((_content, v) => {
-        if (!_.isObject(v) || v['type'] != 'text') return _content;
-        return _content + `${message.role || "user"}:${v["text"] || ""}\n`;
-      }, content);
-    }
-    return content += `${message.role || "user"}:${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
-  }, '');
-  logger.info("\n对话合并：\n" + content);
+  let content;
+  if (isRefConv || messages.length < 2) {
+    content = messages.reduce((content, message) => {
+      if (_.isArray(message.content)) {
+        return message.content.reduce((_content, v) => {
+          if (!_.isObject(v) || v['type'] != 'text') return _content;
+          return _content + `${v["text"] || ""}\n`;
+        }, content);
+      }
+      return content += `${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
+    }, '')
+    logger.info("\n透传内容：\n" + content);
+  }
+  else {
+    content = messages.reduce((content, message) => {
+      if (_.isArray(message.content)) {
+        return message.content.reduce((_content, v) => {
+          if (!_.isObject(v) || v['type'] != 'text') return _content;
+          return _content + `${message.role || "user"}:${v["text"] || ""}\n`;
+        }, content);
+      }
+      return content += `${message.role || "user"}:${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
+    }, '')
+    logger.info("\n对话合并：\n" + content);
+  }
+
   return [
     { role: 'user', content }
   ]
@@ -648,8 +676,8 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
           ...FAKE_HEADERS
         }
       })
-      .then(() => resolve(true))
-      .catch(() => resolve(false));
+        .then(() => resolve(true))
+        .catch(() => resolve(false));
     });
   }
 
