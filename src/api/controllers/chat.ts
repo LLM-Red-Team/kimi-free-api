@@ -261,11 +261,6 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       userId
     } = await acquireToken(refreshToken);
     const sendMessages = messagesPrepare(messages, !!refConvId);
-    console.log(convId, {
-      messages: sendMessages,
-      refs,
-      use_search: useSearch
-    });
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
       messages: sendMessages,
       refs,
@@ -461,12 +456,25 @@ function extractRefFileUrls(messages: any[]) {
  * @param isRefConv 是否为引用会话
  */
 function messagesPrepare(messages: any[], isRefConv = false) {
-  // 注入消息提升注意力
-  let latestMessage = messages[messages.length - 1];
-  let hasFileOrImage = Array.isArray(latestMessage.content)
-    && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
-  // 第二轮开始注入system prompt
-  if (messages.length > 2) {
+  let content;
+  if (isRefConv || messages.length < 2) {
+    content = messages.reduce((content, message) => {
+      if (_.isArray(message.content)) {
+        return message.content.reduce((_content, v) => {
+          if (!_.isObject(v) || v['type'] != 'text') return _content;
+          return _content + `${v["text"] || ""}\n`;
+        }, content);
+      }
+      return content += `${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
+    }, '')
+    logger.info("\n透传内容：\n" + content);
+  }
+  else {
+    // 注入消息提升注意力
+    let latestMessage = messages[messages.length - 1];
+    let hasFileOrImage = Array.isArray(latestMessage.content)
+      && latestMessage.content.some(v => (typeof v === 'object' && ['file', 'image_url'].includes(v['type'])));
+    // 第二轮开始注入system prompt
     if (hasFileOrImage) {
       let newFileMessage = {
         "content": "关注用户最新发送文件和消息",
@@ -482,22 +490,6 @@ function messagesPrepare(messages: any[], isRefConv = false) {
       messages.splice(messages.length - 1, 0, newTextMessage);
       logger.info("注入提升尾部消息注意力system prompt");
     }
-  }
-
-  let content;
-  if (isRefConv || messages.length < 2) {
-    content = messages.reduce((content, message) => {
-      if (_.isArray(message.content)) {
-        return message.content.reduce((_content, v) => {
-          if (!_.isObject(v) || v['type'] != 'text') return _content;
-          return _content + `${v["text"] || ""}\n`;
-        }, content);
-      }
-      return content += `${message.role == 'user' ? wrapUrlsToTags(message.content) : message.content}\n`;
-    }, '')
-    logger.info("\n透传内容：\n" + content);
-  }
-  else {
     content = messages.reduce((content, message) => {
       if (_.isArray(message.content)) {
         return message.content.reduce((_content, v) => {
