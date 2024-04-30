@@ -11,7 +11,7 @@
 ![](https://img.shields.io/github/forks/llm-red-team/kimi-free-api.svg)
 ![](https://img.shields.io/docker/pulls/vinlic/kimi-free-api.svg)
 
-支持高速流式输出、支持多轮对话、支持联网搜索、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
+支持高速流式输出、支持多轮对话、支持联网搜索、支持智能体对话、支持长文档解读、支持图像解析，零配置部署，多路token支持，自动清理会话痕迹。
 
 与ChatGPT接口完全兼容。
 
@@ -84,6 +84,12 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 ### 联网搜索Demo
 
 ![联网搜索](./doc/example-2.png)
+
+### 智能体对话Demo
+
+此处使用 [翻译通](https://kimi.moonshot.cn/chat/coo6l3pkqq4ri39f36bg) 智能体。
+
+![智能体对话](./doc/example-7.png)
 
 ### 长文档解读Demo
 
@@ -269,7 +275,8 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
-    // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    // model随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    // 如果使用kimi+智能体，model请填写智能体ID，就是浏览器地址栏上尾部的一串英文+数字20个字符的ID
     "model": "kimi",
     // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大Token数限制
     // 如果您想获得原生的多轮对话体验，可以传入首轮消息获得的id，来接续上下文，注意如果使用这个，首轮必须传none，否则第二轮会空响应！

@@ -262,6 +262,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
     } = await acquireToken(refreshToken);
     const sendMessages = messagesPrepare(messages, !!refConvId);
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
+      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : undefined,
       messages: sendMessages,
       refs,
       use_search: useSearch
@@ -338,6 +339,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
     } = await acquireToken(refreshToken);
     const sendMessages = messagesPrepare(messages, !!refConvId);
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
+      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : undefined,
       messages: sendMessages,
       refs,
       use_search: useSearch
