@@ -97,7 +97,7 @@ https://udify.app/chat/Po0F6BMJ15q5vu2P
 
 ![长文档解读](./doc/example-5.png)
 
-### 图像解析Demo
+### 图像OCR Demo
 
 ![图像解析](./doc/example-3.png)
 
@@ -386,7 +386,7 @@ Authorization: Bearer [refresh_token]
 }
 ```
 
-### 图像解析
+### 图像OCR
 
 提供一个可访问的图像URL或者BASE64_URL进行解析。
 
