@@ -137,6 +137,7 @@ async function getUserInfo(accessToken: string, refreshToken: string) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: 'https://kimi.moonshot.cn/',
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': `7${util.generateRandomString({ length: 18, charset: 'numeric' })}`,
       ...FAKE_HEADERS
     },
@@ -153,18 +154,21 @@ async function getUserInfo(accessToken: string, refreshToken: string) {
  * 
  * @param refreshToken 用于刷新access_token的refresh_token
  */
-async function createConversation(name: string, refreshToken: string) {
+async function createConversation(model: string, name: string, refreshToken: string) {
   const {
     accessToken,
     userId
   } = await acquireToken(refreshToken);
   const result = await axios.post('https://kimi.moonshot.cn/api/chat', {
+    born_from: '',
     is_example: false,
+    kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : 'kimi',
     name
   }, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: 'https://kimi.moonshot.cn/',
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -193,6 +197,7 @@ async function removeConversation(convId: string, refreshToken: string) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/chat/${convId}`,
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -221,6 +226,7 @@ async function promptSnippetSubmit(query: string, refreshToken: string) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: 'https://kimi.moonshot.cn/',
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -253,7 +259,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       .catch(err => logger.error(err));
 
     // 创建会话
-    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation("未命名会话", refreshToken);
+    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation(model, "未命名会话", refreshToken);
 
     // 请求流
     const {
@@ -262,15 +268,17 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
     } = await acquireToken(refreshToken);
     const sendMessages = messagesPrepare(messages, !!refConvId);
     const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : undefined,
+      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : 'kimi',
       messages: sendMessages,
       refs,
+      is_pro_search: false,
       use_search: useSearch
     }, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/chat/${convId}`,
         'Priority': 'u=1, i',
+        'X-Msh-Platform': 'web',
         'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       },
@@ -330,7 +338,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       .catch(err => logger.error(err));
 
     // 创建会话
-    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation("未命名会话", refreshToken);
+    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation(model, "未命名会话", refreshToken);
 
     // 请求流
     const {
@@ -350,6 +358,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
         Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/chat/${convId}`,
         'Priority': 'u=1, i',
+        'X-Msh-Platform': 'web',
         'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       },
@@ -397,6 +406,7 @@ async function fakeRequest(refreshToken: string) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     }
@@ -539,6 +549,7 @@ async function preSignUrl(filename: string, refreshToken: string) {
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -624,6 +635,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
       'Content-Type': mimeType,
       Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
+      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -645,6 +657,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/`,
+        'X-Msh-Platform': 'web',
         'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       }
@@ -666,6 +679,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Referer: `https://kimi.moonshot.cn/`,
+          'X-Msh-Platform': 'web',
           'X-Traffic-Id': userId,
           ...FAKE_HEADERS
         }
