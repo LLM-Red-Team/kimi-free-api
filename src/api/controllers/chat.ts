@@ -723,6 +723,7 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
  * @param stream 消息流
  */
 async function receiveStream(model: string, convId: string, stream: any) {
+  let webSearchCount = 0;
   return new Promise((resolve, reject) => {
     // 消息初始化
     const data = {
@@ -756,8 +757,10 @@ async function receiveStream(model: string, convId: string, stream: any) {
           resolve(data);
         }
         // 处理联网搜索
-        else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res')
-          refContent += `${result.msg.title} - ${result.msg.url}\n`;
+        else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res'){
+          webSearchCount += 1;
+          refContent += `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n\n`;
+        }
         // else
         //   logger.warn(result.event, result);
       }
@@ -788,6 +791,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   const created = util.unixTimestamp();
   // 创建转换流
   const transStream = new PassThrough();
+  let webSearchCount = 0;
   let searchFlag = false;
   const silentSearch = model.indexOf('silent_search') != -1;
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
@@ -847,6 +851,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
       else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
         if (!searchFlag)
           searchFlag = true;
+        webSearchCount += 1;
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
@@ -854,7 +859,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             {
               index: 0, delta: {
-                content: `检索 ${result.msg.title} - ${result.msg.url} ...\n`
+                content: `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n`
               }, finish_reason: null
             }
           ],
