@@ -15,7 +15,7 @@
 
 与ChatGPT接口完全兼容。
 
-还有以下八个free-api欢迎关注：
+还有以下九个free-api欢迎关注：
 
 阶跃星辰 (跃问StepChat) 接口转API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
