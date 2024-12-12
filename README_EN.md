@@ -12,7 +12,7 @@ Supports high-speed streaming output, multi-turn dialogues, internet search, lon
 
 Fully compatible with the ChatGPT interface.
 
-Also, the following six free APIs are available for your attention:
+Also, the following free APIs are available for your attention:
 
 StepFun (StepChat) API to API [step-free-api](https://github.com/LLM-Red-Team/step-free-api)
 
@@ -24,17 +24,18 @@ Meta Sota (metaso) API to API [metaso-free-api](https://github.com/LLM-Red-Team/
 
 Iflytek Spark (Spark) API to API [spark-free-api](https://github.com/LLM-Red-Team/spark-free-api)
 
-Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api)
+Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LLM-Red-Team/emohaa-free-api) (OUT OF ORDER)
 
 ## Table of Contents
 
-* [Disclaimer](#disclaimer)
+* [Announcement](#disclaimer)
 * [Online experience](#Online-Experience)
 * [Effect Examples](#Effect-Examples)
 * [Access preparation](#Access-Preparation)
    * [Multiple account access](#Multi-Account-Access)
 * [Docker Deployment](#Docker-Deployment)
    * [Docker-compose deployment](#Docker-compose-deployment)
+* [Vercel Deployment](#Vercel-Deployment)
 * [Zeabur Deployment](#Zeabur-Deployment)
 * [Native Deployment](#Native-deployment)
 * [Interface List](#Interface-List)
@@ -47,7 +48,9 @@ Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LL
    * [Token statistics](#Token-statistics)
 * [Star History](#star-history)
   
-## Disclaimer
+## Announcement
+
+**This API is unstable. So we highly recommend you go to the [MoonshotAI](https://platform.moonshot.cn/) use the offical API, avoiding banned.**
 
 **This organization and individuals do not accept any financial donations and transactions. This project is purely for research, communication, and learning purposes!**
 
@@ -131,7 +134,7 @@ Restart service
 docker restart kimi-free-api
 ```
 
-Out of service
+Shut down service
 
 ```shell
 docker stop kimi-free-api
@@ -153,7 +156,33 @@ services:
       - TZ=Asia/Shanghai
 ```
 
-## Zeabur Deployment
+### Render Deployment
+
+**Attention: Some deployment regions may not be able to connect to Kimi. If container logs show request timeouts or connection failures (Singapore has been tested and found unavailable), please switch to another deployment region!**
+
+**Attention Container instances for free accounts will automatically stop after a period of inactivity, which may result in a 50-second or longer delay during the next request. It is recommended to check [Render Container Keepalive](https://github.com/LLM-Red-Team/free-api-hub/#Render%E5%AE%B9%E5%99%A8%E4%BF%9D%E6%B4%BB)**
+
+1. Fork this project to your GitHub account.
+
+2. Visit [Render](https://dashboard.render.com/) and log in with your GitHub account.
+
+3. Build your Web Service (New+ -> Build and deploy from a Git repository -> Connect your forked project -> Select deployment region -> Choose instance type as Free -> Create Web Service).
+
+4. After the build is complete, copy the assigned domain and append the URL to access it.
+
+### Vercel Deployment
+**Note: Vercel free accounts have a request response timeout of 10 seconds, but interface responses are usually longer, which may result in a 504 timeout error from Vercel!**
+
+Please ensure that Node.js environment is installed first.
+```shell
+npm i -g vercel --registry http://registry.npmmirror.com
+vercel login
+git clone https://github.com/LLM-Red-Team/kimi-free-api
+cd kimi-free-api
+vercel --prod
+```
+
+### Zeabur Deployment
 
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
 
@@ -199,11 +228,19 @@ Restart service
 pm2 reload kimi-free-api
 ```
 
-Out of service
+Shut down service
 
 ```shell
 pm2 stop kimi-free-api
 ```
+
+## Recommended Clients
+
+Using the following second-developed clients for free-api series projects is faster and easier, and supports document/image uploads!
+
+[Clivia](https://github.com/Yanyutin753/lobe-chat)'s modified LobeChat [https://github.com/Yanyutin753/lobe-chat](https://github.com/Yanyutin753/lobe-chat)
+
+[Time@](https://github.com/SuYxh)'s modified ChatGPT Web [https://github.com/SuYxh/chatgpt-web-sea](https://github.com/SuYxh/chatgpt-web-sea)
 
 ## interface list
 
@@ -414,7 +451,7 @@ Response data:
 }
 ```
 
-## Precautions
+## Notification
 
 ### Nginx anti-generation optimization
 
