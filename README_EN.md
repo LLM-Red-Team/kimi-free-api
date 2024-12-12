@@ -28,24 +28,25 @@ Lingxin Intelligence (Emohaa) API to API [emohaa-free-api](https://github.com/LL
 
 ## Table of Contents
 
-* [Announcement](#disclaimer)
+* [Announcement](#Announcement)
 * [Online experience](#Online-Experience)
 * [Effect Examples](#Effect-Examples)
 * [Access preparation](#Access-Preparation)
-   * [Multiple account access](#Multi-Account-Access)
+    * [Multiple account access](#Multi-Account-Access)
 * [Docker Deployment](#Docker-Deployment)
-   * [Docker-compose deployment](#Docker-compose-deployment)
-* [Vercel Deployment](#Vercel-Deployment)
-* [Zeabur Deployment](#Zeabur-Deployment)
-* [Native Deployment](#Native-deployment)
+    * [Docker-compose Deployment](#Docker-compose-Deployment)
+    * [Render Deployment](Render-Deployment)
+    * [Vercel Deployment](#Vercel-Deployment)
+    * [Zeabur Deployment](#Zeabur-Deployment)
+* [Native Deployment](#Native-Deployment)
 * [Interface List](#Interface-List)
-   * [Conversation completion](#conversation-completion)
-   * [Document Interpretation](#document-interpretation)
-   * [Image analysis](#image-analysis)
-   * [refresh_token survival detection](#refresh_token-survival-detection)
+    * [Conversation completion](#conversation-completion)
+    * [Document Interpretation](#document-interpretation)
+    * [Image analysis](#image-analysis)
+    * [refresh_token survival detection](#refresh_token-survival-detection)
 * [Precautions](#Precautions)
-   * [Nginx anti-generation optimization](#Nginx-anti-generation-optimization)
-   * [Token statistics](#Token-statistics)
+    * [Nginx anti-generation optimization](#Nginx-anti-generation-optimization)
+    * [Token statistics](#Token-statistics)
 * [Star History](#star-history)
   
 ## Announcement
@@ -140,7 +141,7 @@ Shut down service
 docker stop kimi-free-api
 ```
 
-### Docker-compose deployment
+### Docker-compose Deployment
 
 ```yaml
 version: '3'
@@ -186,7 +187,7 @@ vercel --prod
 
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/GRFYBP)
 
-## Native deployment
+## Native Deployment
 
 Please prepare a server with a public IP and open port 8000.
 
