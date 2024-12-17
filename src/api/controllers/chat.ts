@@ -2,8 +2,9 @@ import { PassThrough } from "stream";
 import path from 'path';
 import _ from 'lodash';
 import mime from 'mime';
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
+import type IStreamMessage from "../interfaces/IStreamMessage.ts";
 import APIException from "@/lib/exceptions/APIException.ts";
 import EX from "@/api/consts/exceptions.ts";
 import { createParser } from 'eventsource-parser'
@@ -12,27 +13,39 @@ import util from '@/lib/util.ts';
 
 // 模型名称
 const MODEL_NAME = 'kimi';
+// 设备ID
+const DEVICE_ID = Math.random() * 999999999999999999 + 7000000000000000000;
+// SessionID
+const SESSION_ID = Math.random() * 99999999999999999 + 1700000000000000000;
 // access_token有效期
 const ACCESS_TOKEN_EXPIRES = 300;
 // 最大重试次数
 const MAX_RETRY_COUNT = 3;
 // 重试延迟
 const RETRY_DELAY = 5000;
+// 基础URL
+const BASE_URL = 'https://kimi.moonshot.cn';
 // 伪装headers
 const FAKE_HEADERS = {
   'Accept': '*/*',
   'Accept-Encoding': 'gzip, deflate, br, zstd',
-  'Accept-Language': 'zh-CN,zh;q=0.9',
-  'Origin': 'https://kimi.moonshot.cn',
+  'Accept-Language': 'zh-CN,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+  'Cache-Control': 'no-cache',
+  'Pragma': 'no-cache',
+  'Origin': BASE_URL,
   'Cookie': util.generateCookie(),
   'R-Timezone': 'Asia/Shanghai',
-  'Sec-Ch-Ua': '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
+  'Sec-Ch-Ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
   'Sec-Ch-Ua-Mobile': '?0',
   'Sec-Ch-Ua-Platform': '"Windows"',
   'Sec-Fetch-Dest': 'empty',
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
-  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+  'Priority': 'u=1, i',
+  'X-Msh-Device-Id': `${DEVICE_ID}`,
+  'X-Msh-Platform': 'web',
+  'X-Msh-Session-Id': `${SESSION_ID}`
 };
 // 文件最大大小
 const FILE_MAX_SIZE = 100 * 1024 * 1024;
@@ -54,23 +67,10 @@ async function requestToken(refreshToken: string) {
   accessTokenRequestQueueMap[refreshToken] = [];
   logger.info(`Refresh token: ${refreshToken}`);
   const result = await (async () => {
-    const result = await axios.get('https://kimi.moonshot.cn/api/auth/token/refresh', {
+    const result = await axios.get(`${BASE_URL}/api/auth/token/refresh`, {
       headers: {
-        Accept: '*/*',
-        'Accept-Encoding': 'gzip, deflate, br, zstd',
-        'Accept-Language': 'zh-CN,zh;q=0.9',
         Authorization: `Bearer ${refreshToken}`,
-        'Cache-Control': 'no-cache',
-        'Cookie': util.generateCookie(),
-        Pragma: 'no-cache',
-        Referer: 'https://kimi.moonshot.cn/',
-        'Sec-Ch-Ua': '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
-        'Sec-Ch-Ua-Mobile': '?0',
-        'Sec-Ch-Ua-Platform': '"Windows"',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+        ...FAKE_HEADERS,
       },
       timeout: 15000,
       validateStatus: () => true
@@ -79,9 +79,18 @@ async function requestToken(refreshToken: string) {
       access_token,
       refresh_token
     } = checkResult(result, refreshToken);
-    const { id: userId } = await getUserInfo(access_token, refreshToken);
+    const userResult = await axios.get(`${BASE_URL}/api/user`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        ...FAKE_HEADERS,
+      },
+      timeout: 15000,
+      validateStatus: () => true
+    });
+    if(!userResult.data.id)
+      throw new APIException(EX.API_REQUEST_FAILED, '获取用户信息失败');
     return {
-      userId,
+      userId: userResult.data.id,
       accessToken: access_token,
       refreshToken: refresh_token,
       refreshTime: util.unixTimestamp() + ACCESS_TOKEN_EXPIRES
@@ -96,6 +105,7 @@ async function requestToken(refreshToken: string) {
       return result;
     })
     .catch(err => {
+      logger.error(err);
       if (accessTokenRequestQueueMap[refreshToken]) {
         accessTokenRequestQueueMap[refreshToken].forEach(resolve => resolve(err));
         delete accessTokenRequestQueueMap[refreshToken];
@@ -128,20 +138,32 @@ async function acquireToken(refreshToken: string): Promise<any> {
 }
 
 /**
- * 获取用户信息
- * 
- * @param refreshToken 用于刷新access_token的refresh_token
+ * 发送请求
  */
-async function getUserInfo(accessToken: string, refreshToken: string) {
-  const result = await axios.get('https://kimi.moonshot.cn/api/user', {
+export async function request(
+  method: string,
+  uri: string,
+  refreshToken: string,
+  options: AxiosRequestConfig = {}
+) {
+  const {
+    accessToken,
+    userId
+  } = await acquireToken(refreshToken);
+  logger.info(`url: ${uri}`);
+  const result = await axios({
+    method,
+    url: `${BASE_URL}${uri}`,
+    params: options.params,
+    data: options.data,
     headers: {
       Authorization: `Bearer ${accessToken}`,
-      Referer: 'https://kimi.moonshot.cn/',
-      'X-Msh-Platform': 'web',
-      'X-Traffic-Id': `7${util.generateRandomString({ length: 18, charset: 'numeric' })}`,
-      ...FAKE_HEADERS
+      'X-Traffic-Id': userId,
+      ...FAKE_HEADERS,
+      ...(options.headers || {})
     },
-    timeout: 15000,
+    timeout: options.timeout || 15000,
+    responseType: options.responseType,
     validateStatus: () => true
   });
   return checkResult(result, refreshToken);
@@ -156,28 +178,15 @@ async function getUserInfo(accessToken: string, refreshToken: string) {
  */
 async function createConversation(model: string, name: string, refreshToken: string) {
   const {
-    accessToken,
-    userId
-  } = await acquireToken(refreshToken);
-  const result = await axios.post('https://kimi.moonshot.cn/api/chat', {
-    born_from: '',
-    is_example: false,
-    kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : 'kimi',
-    name
-  }, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Referer: 'https://kimi.moonshot.cn/',
-      'X-Msh-Platform': 'web',
-      'X-Traffic-Id': userId,
-      ...FAKE_HEADERS
-    },
-    timeout: 15000,
-    validateStatus: () => true
-  });
-  const {
     id: convId
-  } = checkResult(result, refreshToken);
+  } = await request('POST', '/api/chat', refreshToken, {
+    data: {
+      enter_method: 'new_chat',
+      is_example: false,
+      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : 'kimi',
+      name
+    }
+  });
   return convId;
 }
 
@@ -189,51 +198,77 @@ async function createConversation(model: string, name: string, refreshToken: str
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function removeConversation(convId: string, refreshToken: string) {
-  const {
-    accessToken,
-    userId
-  } = await acquireToken(refreshToken);
-  const result = await axios.delete(`https://kimi.moonshot.cn/api/chat/${convId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Referer: `https://kimi.moonshot.cn/chat/${convId}`,
-      'X-Msh-Platform': 'web',
-      'X-Traffic-Id': userId,
-      ...FAKE_HEADERS
-    },
-    timeout: 15000,
-    validateStatus: () => true
-  });
-  checkResult(result, refreshToken);
+  return await request('DELETE', `/api/chat/${convId}`, refreshToken);
 }
 
 /**
- * prompt片段提交
+ * 获取建议
  * 
- * @param query prompt
  * @param refreshToken 用于刷新access_token的refresh_token
  */
-async function promptSnippetSubmit(query: string, refreshToken: string) {
-  const {
-    accessToken,
-    userId
-  } = await acquireToken(refreshToken);
-  const result = await axios.post('https://kimi.moonshot.cn/api/prompt-snippet/instance', {
-    "offset": 0,
-    "size": 10,
-    "query": query.replace('user:', '').replace('assistant:', '')
-  }, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Referer: 'https://kimi.moonshot.cn/',
-      'X-Msh-Platform': 'web',
-      'X-Traffic-Id': userId,
-      ...FAKE_HEADERS
-    },
-    timeout: 15000,
-    validateStatus: () => true
+async function getSuggestion(query: string, refreshToken: string) {
+  return await request('POST', '/api/suggestion', refreshToken, {
+    data: {
+      offset: 0,
+      page_referer: 'chat',
+      query: query.replace('user:', '').replace('assistant:', ''),
+      scene: 'first_round',
+      size: 10
+    }
   });
-  checkResult(result, refreshToken);
+}
+
+/**
+ * 预处理N2S
+ * 
+ * 预处理N2S，用于获取搜索结果
+ * 
+ * @param model 模型名称
+ * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
+ * @param refs 引用文件ID列表
+ * @param refreshToken 用于刷新access_token的refresh_token
+ * @param refConvId 引用会话ID
+ */
+async function preN2s(model: string, messages: { role: string, content: string }[], refs: string[], refreshToken: string, refConvId?: string) {
+  const isSearchModel = model.indexOf('search') != -1;
+  return await request('POST', `/api/chat/${refConvId}/pre-n2s`, refreshToken, {
+    data: {
+      is_pro_search: false,
+      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : 'kimi',
+      messages,
+      refs,
+      use_search: isSearchModel
+    }
+  });
+}
+
+/**
+ * token计数
+ * 
+ * @param query 查询内容
+ * @param refreshToken 用于刷新access_token的refresh_token
+ * @param refConvId 引用会话ID
+ */
+async function tokenSize(query: string, refs: string[], refreshToken: string, refConvId: string) {
+  return await request('POST', `/api/chat/${refConvId}/token_size`, refreshToken, {
+    data: {
+      content: query,
+      refs: []
+    }
+  });
+}
+
+/**
+ * 获取探索版使用量
+ * 
+ * @param refreshToken 用于刷新access_token的refresh_token
+ */
+async function getResearchUsage(refreshToken: string): Promise<{
+  remain,
+  total,
+  used
+}> {
+  return await request('GET', '/api/chat/research/usage', refreshToken);
 }
 
 /**
@@ -242,62 +277,110 @@ async function promptSnippetSubmit(query: string, refreshToken: string) {
  * @param model 模型名称
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
- * @param useSearch 是否开启联网搜索
  * @param refConvId 引用会话ID
  * @param retryCount 重试次数
  */
-async function createCompletion(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, refConvId?: string, retryCount = 0) {
+async function createCompletion(model = MODEL_NAME, messages: any[], refreshToken: string, refConvId?: string, retryCount = 0, segmentId?: string): Promise<IStreamMessage> {
   return (async () => {
     logger.info(messages);
 
+    // 创建会话
+    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation(model, "未命名会话", refreshToken);
+
     // 提取引用文件URL并上传kimi获得引用的文件ID列表
     const refFileUrls = extractRefFileUrls(messages);
-    const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
+    const refResults = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken, convId))) : [];
+    const refs = refResults.map(result => result.id);
+    const refsFile = refResults.map(result => ({
+      detail: result,
+      done: true,
+      file: {},
+      file_info: result,
+      id: result.id,
+      name: result.name,
+      parse_status: 'success',
+      size: result.size,
+      upload_progress: 100,
+      upload_status: 'success'
+    }));
 
     // 伪装调用获取用户信息
     fakeRequest(refreshToken)
       .catch(err => logger.error(err));
 
-    // 创建会话
-    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation(model, "未命名会话", refreshToken);
-
-    // 请求流
-    const {
-      accessToken,
-      userId
-    } = await acquireToken(refreshToken);
+    // 消息预处理
     const sendMessages = messagesPrepare(messages, !!refConvId);
-    const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : 'kimi',
-      messages: sendMessages,
-      refs,
-      is_pro_search: false,
-      use_search: useSearch
-    }, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Referer: `https://kimi.moonshot.cn/chat/${convId}`,
-        'Priority': 'u=1, i',
-        'X-Msh-Platform': 'web',
-        'X-Traffic-Id': userId,
-        ...FAKE_HEADERS
+
+    !segmentId && preN2s(model, sendMessages, refs, refreshToken, convId)
+      .catch(err => logger.error(err));
+    getSuggestion(sendMessages[0].content, refreshToken)
+      .catch(err => logger.error(err));
+    tokenSize(sendMessages[0].content, refs, refreshToken, convId)
+      .catch(err => logger.error(err));
+    
+    const isMath = model.indexOf('math') != -1;
+    const isSearchModel = model.indexOf('search') != -1;
+    const isResearchModel = model.indexOf('research') != -1;
+    const isK1Model = model.indexOf('k1') != -1;
+
+    logger.info(`使用模型: ${model}，是否联网检索: ${isSearchModel}，是否探索版: ${isResearchModel}，是否K1模型: ${isK1Model}，是否数学模型: ${isMath}`);
+
+    if(segmentId)
+      logger.info(`继续请求，segmentId: ${segmentId}`);
+
+    // 检查探索版使用量
+    if(isResearchModel) {
+      const {
+        total,
+        used
+      } = await getResearchUsage(refreshToken);
+      if(used >= total)
+        throw new APIException(EX.API_RESEARCH_EXCEEDS_LIMIT, `探索版使用量已达到上限`);
+      logger.info(`探索版当前额度: ${used}/${total}`);
+    }
+
+    const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
+    
+    // 请求补全流
+    const stream = await request('POST', `/api/chat/${convId}/completion/stream`, refreshToken, {
+      data: segmentId ? {
+        segment_id: segmentId,
+        action: 'continue',
+        messages: [{ role: 'user', content: ' ' }],
+        kimiplus_id: kimiplusId,
+        extend: { sidebar: true }
+      } : {
+        kimiplus_id: kimiplusId,
+        messages: sendMessages,
+        refs,
+        refs_file: refsFile,
+        use_math: isMath,
+        use_research: isResearchModel,
+        use_search: isSearchModel,
+        extend: { sidebar: true }
       },
-      // 120秒超时
-      timeout: 120000,
-      validateStatus: () => true,
+      headers: {
+        Referer: `https://kimi.moonshot.cn/chat/${convId}`
+      },
       responseType: 'stream'
     });
 
     const streamStartTime = util.timestamp();
+
     // 接收流为输出文本
-    const answer = await receiveStream(model, convId, result.data);
+    const answer = await receiveStream(model, convId, stream);
+
+    // 如果上次请求生成长度超限，则继续请求
+    if(answer.choices[0].finish_reason == 'length' && answer.segment_id) {
+      const continueAnswer = await createCompletion(model, [], refreshToken, convId, retryCount, answer.segment_id);
+      answer.choices[0].message.content += continueAnswer.choices[0].message.content;
+    }
+  
     logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
 
     // 异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
     // 如果引用会话将不会清除，因为我们不知道什么时候你会结束会话
     !refConvId && removeConversation(convId, refreshToken)
-      .catch(err => console.error(err));
-    promptSnippetSubmit(sendMessages[0].content, refreshToken)
       .catch(err => console.error(err));
 
     return answer;
@@ -308,7 +391,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return createCompletion(model, messages, refreshToken, useSearch, refConvId, retryCount + 1);
+          return createCompletion(model, messages, refreshToken, refConvId, retryCount + 1);
         })();
       }
       throw err;
@@ -321,59 +404,91 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
  * @param model 模型名称
  * @param messages 参考gpt系列消息格式，多轮对话请完整提供上下文
  * @param refreshToken 用于刷新access_token的refresh_token
- * @param useSearch 是否开启联网搜索
  * @param refConvId 引用会话ID
  * @param retryCount 重试次数
  */
-async function createCompletionStream(model = MODEL_NAME, messages: any[], refreshToken: string, useSearch = true, refConvId?: string, retryCount = 0) {
+async function createCompletionStream(model = MODEL_NAME, messages: any[], refreshToken: string, refConvId?: string, retryCount = 0) {
   return (async () => {
     logger.info(messages);
 
+    // 创建会话
+    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation(model, "未命名会话", refreshToken);
+
     // 提取引用文件URL并上传kimi获得引用的文件ID列表
     const refFileUrls = extractRefFileUrls(messages);
-    const refs = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken))) : [];
+    const refResults = refFileUrls.length ? await Promise.all(refFileUrls.map(fileUrl => uploadFile(fileUrl, refreshToken, convId))) : [];
+    const refs = refResults.map(result => result.id);
+    const refsFile = refResults.map(result => ({
+      detail: result,
+      done: true,
+      file: {},
+      file_info: result,
+      id: result.id,
+      name: result.name,
+      parse_status: 'success',
+      size: result.size,
+      upload_progress: 100,
+      upload_status: 'success'
+    }));
 
     // 伪装调用获取用户信息
     fakeRequest(refreshToken)
       .catch(err => logger.error(err));
 
-    // 创建会话
-    const convId = /[0-9a-zA-Z]{20}/.test(refConvId) ? refConvId : await createConversation(model, "未命名会话", refreshToken);
-
-    // 请求流
-    const {
-      accessToken,
-      userId
-    } = await acquireToken(refreshToken);
     const sendMessages = messagesPrepare(messages, !!refConvId);
-    const result = await axios.post(`https://kimi.moonshot.cn/api/chat/${convId}/completion/stream`, {
-      kimiplus_id: /^[0-9a-z]{20}$/.test(model) ? model : undefined,
-      messages: sendMessages,
-      refs,
-      use_search: useSearch
-    }, {
-      // 120秒超时
-      timeout: 120000,
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Referer: `https://kimi.moonshot.cn/chat/${convId}`,
-        'Priority': 'u=1, i',
-        'X-Msh-Platform': 'web',
-        'X-Traffic-Id': userId,
-        ...FAKE_HEADERS
+
+    preN2s(model, sendMessages, refs, refreshToken, convId)
+      .catch(err => logger.error(err));
+    getSuggestion(sendMessages[0].content, refreshToken)
+      .catch(err => logger.error(err));
+    tokenSize(sendMessages[0].content, refs, refreshToken, convId)
+      .catch(err => logger.error(err));
+    
+    const isMath = model.indexOf('math') != -1;
+    const isSearchModel = model.indexOf('search') != -1;
+    const isResearchModel = model.indexOf('research') != -1;
+    const isK1Model = model.indexOf('k1') != -1;
+
+    logger.info(`使用模型: ${model}，是否联网检索: ${isSearchModel}，是否探索版: ${isResearchModel}，是否K1模型: ${isK1Model}，是否数学模型: ${isMath}`);
+
+    // 检查探索版使用量
+    if(isResearchModel) {
+      const {
+        total,
+        used
+      } = await getResearchUsage(refreshToken);
+      if(used >= total)
+        throw new APIException(EX.API_RESEARCH_EXCEEDS_LIMIT, `探索版使用量已达到上限`);
+      logger.info(`探索版当前额度: ${used}/${total}`);
+    }
+
+    const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
+
+    // 请求补全流
+    const stream = await request('POST', `/api/chat/${convId}/completion/stream`, refreshToken, {
+      data: {
+        kimiplus_id: kimiplusId,
+        messages: sendMessages,
+        refs,
+        refs_file: refsFile,
+        use_math: isMath,
+        use_research: isResearchModel,
+        use_search: isSearchModel,
+        extend: { sidebar: true }
       },
-      validateStatus: () => true,
+      headers: {
+        Referer: `https://kimi.moonshot.cn/chat/${convId}`
+      },
       responseType: 'stream'
     });
+
     const streamStartTime = util.timestamp();
     // 创建转换流将消息格式转换为gpt兼容格式
-    return createTransStream(model, convId, result.data, () => {
+    return createTransStream(model, convId, stream, () => {
       logger.success(`Stream has completed transfer ${util.timestamp() - streamStartTime}ms`);
       // 流传输结束后异步移除会话，如果消息不合规，此操作可能会抛出数据库错误异常，请忽略
       // 如果引用会话将不会清除，因为我们不知道什么时候你会结束会话
       !refConvId && removeConversation(convId, refreshToken)
-        .catch(err => console.error(err));
-      promptSnippetSubmit(sendMessages[0].content, refreshToken)
         .catch(err => console.error(err));
     });
   })()
@@ -383,7 +498,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
         logger.warn(`Try again after ${RETRY_DELAY / 1000}s...`);
         return (async () => {
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-          return createCompletionStream(model, messages, refreshToken, useSearch, refConvId, retryCount + 1);
+          return createCompletionStream(model, messages, refreshToken, refConvId, retryCount + 1);
         })();
       }
       throw err;
@@ -398,33 +513,29 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
  * @param refreshToken 用于刷新access_token的refresh_token
  */
 async function fakeRequest(refreshToken: string) {
-  const {
-    accessToken,
-    userId
-  } = await acquireToken(refreshToken);
-  const options = {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Referer: `https://kimi.moonshot.cn/`,
-      'X-Msh-Platform': 'web',
-      'X-Traffic-Id': userId,
-      ...FAKE_HEADERS
-    }
-  };
   await [
-    () => axios.get('https://kimi.moonshot.cn/api/user', options),
-    () => axios.get('https://kimi.moonshot.cn/api/chat_1m/user/status', options),
-    () => axios.post('https://kimi.moonshot.cn/api/chat/list', {
-      offset: 0,
-      size: 50
-    }, options),
-    () => axios.post('https://kimi.moonshot.cn/api/show_case/list', {
-      offset: 0,
-      size: 4,
-      enable_cache: true,
-      order: "asc"
-    }, options)
-  ][Math.floor(Math.random() * 4)]();
+    () => request('GET', '/api/user', refreshToken),
+    () => request('POST', '/api/user/usage', refreshToken, {
+      data: {
+        usage: ['kimiv', 'math']
+      }
+    }),
+    () => request('GET', '/api/chat_1m/user/status', refreshToken),
+    () => request('GET', '/api/kimi_mv/user/status', refreshToken),
+    () => request('POST', '/api/kimiplus/history', refreshToken),
+    () => request('POST', '/api/kimiplus/search', refreshToken, {
+      data: {
+        offset: 0,
+        size: 20
+      }
+    }),
+    () => request('POST', '/api/chat/list', refreshToken, {
+      data: {
+        offset: 0,
+        size: 50
+      }
+    }),
+  ][Math.floor(Math.random() * 7)]();
 }
 
 /**
@@ -536,20 +647,19 @@ function wrapUrlsToTags(content: string) {
  * @param filename 文件名称
  * @param refreshToken 用于刷新access_token的refresh_token
  */
-async function preSignUrl(filename: string, refreshToken: string) {
+async function preSignUrl(action: string, filename: string, refreshToken: string) {
   const {
     accessToken,
     userId
   } = await acquireToken(refreshToken);
   const result = await axios.post('https://kimi.moonshot.cn/api/pre-sign-url', {
-    action: 'file',
+    action,
     name: filename
   }, {
     timeout: 15000,
     headers: {
       Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
-      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -585,8 +695,9 @@ async function checkFileUrl(fileUrl: string) {
  * 
  * @param fileUrl 文件URL
  * @param refreshToken 用于刷新access_token的refresh_token
+ * @param refConvId 引用会话ID
  */
-async function uploadFile(fileUrl: string, refreshToken: string) {
+async function uploadFile(fileUrl: string, refreshToken: string, refConvId?: string) {
   // 预检查远程文件URL可用性
   await checkFileUrl(fileUrl);
 
@@ -610,11 +721,14 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     }));
   }
 
+  const fileType = (mimeType || '').includes('image') ? 'image' : 'file';
+
   // 获取预签名文件URL
-  const {
+  let {
     url: uploadUrl,
-    object_name: objectName
-  } = await preSignUrl(filename, refreshToken);
+    object_name: objectName,
+    file_id: fileId
+  } = await preSignUrl(fileType, filename, refreshToken);
 
   // 获取文件的MIME类型
   mimeType = mimeType || mime.getType(filename);
@@ -635,7 +749,6 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
       'Content-Type': mimeType,
       Authorization: `Bearer ${accessToken}`,
       Referer: `https://kimi.moonshot.cn/`,
-      'X-Msh-Platform': 'web',
       'X-Traffic-Id': userId,
       ...FAKE_HEADERS
     },
@@ -643,30 +756,36 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
   });
   checkResult(result, refreshToken);
 
-  let fileId, status, startTime = Date.now();
-  while (status != 'initialized') {
+  let status, startTime = Date.now();
+  let fileDetail;
+  while (status != 'initialized' && status != 'parsed') {
     if (Date.now() - startTime > 30000)
       throw new Error('文件等待处理超时');
     // 获取文件上传结果
-    result = await axios.post('https://kimi.moonshot.cn/api/file', {
+    result = await axios.post('https://kimi.moonshot.cn/api/file', fileType == 'image' ? {
+      type: 'image',
+      file_id: fileId,
+      name: filename
+    } : {
       type: 'file',
       name: filename,
       object_name: objectName,
-      timeout: 15000
+      file_id: '',
+      chat_id: refConvId
     }, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
         Referer: `https://kimi.moonshot.cn/`,
-        'X-Msh-Platform': 'web',
         'X-Traffic-Id': userId,
         ...FAKE_HEADERS
       }
     });
-    ({ id: fileId, status } = checkResult(result, refreshToken));
+    fileDetail = checkResult(result, refreshToken);
+    ({ id: fileId, status } = fileDetail);
   }
 
   startTime = Date.now();
-  let parseFinish = false;
+  let parseFinish = status == 'parsed';
   while (!parseFinish) {
     if (Date.now() - startTime > 30000)
       throw new Error('文件等待处理超时');
@@ -679,7 +798,6 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           Referer: `https://kimi.moonshot.cn/`,
-          'X-Msh-Platform': 'web',
           'X-Traffic-Id': userId,
           ...FAKE_HEADERS
         }
@@ -689,7 +807,7 @@ async function uploadFile(fileUrl: string, refreshToken: string) {
     });
   }
 
-  return fileId;
+  return fileDetail;
 }
 
 /**
@@ -722,8 +840,9 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
  * @param convId 会话ID
  * @param stream 消息流
  */
-async function receiveStream(model: string, convId: string, stream: any) {
+async function receiveStream(model: string, convId: string, stream: any): Promise<IStreamMessage> {
   let webSearchCount = 0;
+  let temp = Buffer.from('');
   return new Promise((resolve, reject) => {
     // 消息初始化
     const data = {
@@ -734,10 +853,11 @@ async function receiveStream(model: string, convId: string, stream: any) {
         { index: 0, message: { role: 'assistant', content: '' }, finish_reason: 'stop' }
       ],
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      segment_id: '',
       created: util.unixTimestamp()
     };
     let refContent = '';
-    const silentSearch = model.indexOf('silent_search') != -1;
+    const silentSearch = model.indexOf('silent') != -1;
     const parser = createParser(event => {
       try {
         if (event.type !== "event") return;
@@ -747,8 +867,16 @@ async function receiveStream(model: string, convId: string, stream: any) {
           throw new Error(`Stream response invalid: ${event.data}`);
         // 处理消息
         if (result.event == 'cmpl' && result.text) {
-          const exceptCharIndex = result.text.indexOf("�");
-          data.choices[0].message.content += result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+          data.choices[0].message.content += result.text;
+        }
+        // 处理请求ID
+        else if(result.event == 'req') {
+          data.segment_id = result.id;
+        }
+        // 处理超长文本
+        else if(result.event == 'length') {
+          logger.warn('此次生成达到max_tokens，稍候将继续请求拼接完整响应');
+          data.choices[0].finish_reason = 'length';
         }
         // 处理结束或错误
         else if (result.event == 'all_done' || result.event == 'error') {
@@ -757,7 +885,7 @@ async function receiveStream(model: string, convId: string, stream: any) {
           resolve(data);
         }
         // 处理联网搜索
-        else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res'){
+        else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
           webSearchCount += 1;
           refContent += `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n\n`;
         }
@@ -770,7 +898,20 @@ async function receiveStream(model: string, convId: string, stream: any) {
       }
     });
     // 将流数据喂给SSE转换器
-    stream.on("data", buffer => parser.feed(buffer.toString()));
+    stream.on("data", buffer => {
+      // 检查buffer是否以完整UTF8字符结尾
+      if (buffer.toString().indexOf('�') != -1) {
+        // 如果不完整则累积buffer直到收到完整字符
+        temp = Buffer.concat([temp, buffer]);
+        return;
+      }
+      // 将之前累积的不完整buffer拼接
+      if (temp.length > 0) {
+        buffer = Buffer.concat([temp, buffer]);
+        temp = Buffer.from('');
+      }
+      parser.feed(buffer.toString());
+    });
     stream.once("error", err => reject(err));
     stream.once("close", () => resolve(data));
   });
@@ -793,7 +934,9 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   const transStream = new PassThrough();
   let webSearchCount = 0;
   let searchFlag = false;
-  const silentSearch = model.indexOf('silent_search') != -1;
+  let lengthExceed = false;
+  let segmentId = '';
+  const silentSearch = model.indexOf('silent') != -1;
   !transStream.closed && transStream.write(`data: ${JSON.stringify({
     id: convId,
     model,
@@ -801,6 +944,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
     choices: [
       { index: 0, delta: { role: 'assistant', content: '' }, finish_reason: null }
     ],
+    segment_id: '',
     created
   })}\n\n`);
   const parser = createParser(event => {
@@ -821,11 +965,20 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             { index: 0, delta: { content: (searchFlag ? '\n' : '') + chunk }, finish_reason: null }
           ],
+          segment_id: segmentId,
           created
         })}\n\n`;
         if (searchFlag)
           searchFlag = false;
         !transStream.closed && transStream.write(data);
+      }
+      // 处理请求ID
+      else if(result.event == 'req') {
+        segmentId = result.id;
+      }
+      // 处理超长文本
+      else if (result.event == 'length') {
+        lengthExceed = true;
       }
       // 处理结束或错误
       else if (result.event == 'all_done' || result.event == 'error') {
@@ -837,10 +990,11 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
             {
               index: 0, delta: result.event == 'error' ? {
                 content: '\n[内容由于不合规被停止生成，我们换个话题吧]'
-              } : {}, finish_reason: 'stop'
+              } : {}, finish_reason: lengthExceed ? 'length' : 'stop'
             }
           ],
           usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+          segment_id: segmentId,
           created
         })}\n\n`;
         !transStream.closed && transStream.write(data);
@@ -863,6 +1017,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
               }, finish_reason: null
             }
           ],
+          segment_id: segmentId,
           created
         })}\n\n`;
         !transStream.closed && transStream.write(data);

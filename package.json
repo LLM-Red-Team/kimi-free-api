@@ -1,8 +1,7 @@
 {
   "name": "kimi-free-api",
-  "version": "0.0.34",
+  "version": "0.0.36",
   "description": "Kimi Free API Server",
-  "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -13,8 +12,8 @@
     "dist/"
   ],
   "scripts": {
-    "dev": "tsup src/index.ts --format cjs,esm --sourcemap --dts --publicDir public --watch --onSuccess \"node dist/index.js\"",
-    "start": "node dist/index.js",
+    "dev": "tsup src/index.ts --format cjs,esm --sourcemap --dts --publicDir public --watch --onSuccess \"node --enable-source-maps --no-node-snapshot dist/index.js\"",
+    "start": "node --enable-source-maps --no-node-snapshot dist/index.js",
     "build": "tsup src/index.ts --format cjs,esm --sourcemap --dts --clean --publicDir public"
   },
   "author": "Vinlic",

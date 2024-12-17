@@ -261,7 +261,15 @@ Authorization: Bearer [refresh_token]
 Request data:
 ```json
 {
-     // Fill in the model name as you like. If you do not want to output the retrieval process model name, please include silent_search.
+    // Model name
+    // kimi: default model
+    // kimi-search: online search model
+    // kimi-research: exploration version model
+    // kimi-k1: K1 model
+    // kimi-math: math model
+    // kimi-silent: model without search process output
+    // search/research/k1/math/silent: can be freely combined
+    // If using kimi+agent, fill in the agent ID for model, which is the 20-character ID of letters and numbers at the end of the browser address bar
      "model": "kimi",
      "messages": [
          {
@@ -317,27 +325,35 @@ Authorization: Bearer [refresh_token]
 Request data:
 ```json
 {
-     // Fill in the model name as you like. If you do not want to output the retrieval process model name, please include silent_search.
-     "model": "kimi",
-     "messages": [
-         {
-             "role": "user",
-             "content": [
-                 {
-                     "type": "file",
-                     "file_url": {
-                         "url": "https://mj101-1317487292.cos.ap-shanghai.myqcloud.com/ai/test.pdf"
-                     }
-                 },
-                 {
-                     "type": "text",
-                     "text": "What does the document say?"
-                 }
-             ]
-         }
-     ],
-     // It is recommended to turn off online search to prevent interference in interpreting results.
-     "use_search": false
+    // Model name
+    // kimi: default model
+    // kimi-search: online search model
+    // kimi-research: exploration version model
+    // kimi-k1: K1 model
+    // kimi-math: math model
+    // kimi-silent: model without search process output
+    // search/research/k1/math/silent: can be freely combined
+    // If using kimi+agent, fill in the agent ID for model, which is the 20-character ID of letters and numbers at the end of the browser address bar
+    "model": "kimi",
+    "messages": [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "file",
+                    "file_url": {
+                        "url": "https://mj101-1317487292.cos.ap-shanghai.myqcloud.com/ai/test.pdf"
+                    }
+                },
+                {
+                    "type": "text",
+                    "text": "What does the document say?"
+                }
+            ]
+        }
+    ],
+    // It is recommended to turn off online search to prevent interference in interpreting results.
+    "use_search": false
 }
 ```
 
@@ -383,7 +399,15 @@ Authorization: Bearer [refresh_token]
 Request data:
 ```json
 {
-     // Fill in the model name as you like. If you do not want to output the retrieval process model name, please include silent_search.
+    // Model name
+    // kimi: default model
+    // kimi-search: online search model
+    // kimi-research: exploration version model
+    // kimi-k1: K1 model
+    // kimi-math: math model
+    // kimi-silent: model without search process output
+    // search/research/k1/math/silent: can be freely combined
+    // If using kimi+agent, fill in the agent ID for model, which is the 20-character ID of letters and numbers at the end of the browser address bar
      "model": "kimi",
      "messages": [
          {
