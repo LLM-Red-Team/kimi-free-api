@@ -20,15 +20,19 @@ export default {
             const tokens = chat.tokenSplit(request.headers.authorization);
             // 随机挑选一个refresh_token
             const token = _.sample(tokens);
-            const { model, conversation_id: convId, messages, stream, use_search } = request.body;
+            let { model, conversation_id: convId, messages, stream, use_search } = request.body;
+
+            if(use_search)
+                model = 'kimi-search';
+
             if (stream) {
-                const stream = await chat.createCompletionStream(model, messages, token, use_search, convId);
+                const stream = await chat.createCompletionStream(model, messages, token, convId);
                 return new Response(stream, {
                     type: "text/event-stream"
                 });
             }
             else
-                return await chat.createCompletion(model, messages, token, use_search, convId);
+                return await chat.createCompletion(model, messages, token, convId);
         }
 
     }

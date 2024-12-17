@@ -281,7 +281,14 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
-    // model随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    // 模型名称
+    // kimi：默认模型
+    // kimi-search：联网检索模型
+    // kimi-research：探索版模型
+    // kimi-k1：K1模型
+    // kimi-math：数学模型
+    // kimi-silent：不输出检索过程模型
+    // search/research/k1/math/silent：可自由组合使用
     // 如果使用kimi+智能体，model请填写智能体ID，就是浏览器地址栏上尾部的一串英文+数字20个字符的ID
     "model": "kimi",
     // 目前多轮对话基于消息合并实现，某些场景可能导致能力下降且受单轮最大Token数限制
@@ -341,7 +348,15 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
-    // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    // 模型名称
+    // kimi：默认模型
+    // kimi-search：联网检索模型
+    // kimi-research：探索版模型
+    // kimi-k1：K1模型
+    // kimi-math：数学模型
+    // kimi-silent：不输出检索过程模型
+    // search/research/k1/math/silent：可自由组合使用
+    // 如果使用kimi+智能体，model请填写智能体ID，就是浏览器地址栏上尾部的一串英文+数字20个字符的ID
     "model": "kimi",
     "messages": [
         {
@@ -407,7 +422,15 @@ Authorization: Bearer [refresh_token]
 请求数据：
 ```json
 {
-    // 模型名称随意填写，如果不希望输出检索过程模型名称请包含silent_search
+    // 模型名称
+    // kimi：默认模型
+    // kimi-search：联网检索模型
+    // kimi-research：探索版模型
+    // kimi-k1：K1模型
+    // kimi-math：数学模型
+    // kimi-silent：不输出检索过程模型
+    // search/research/k1/math/silent：可自由组合使用
+    // 如果使用kimi+智能体，model请填写智能体ID，就是浏览器地址栏上尾部的一串英文+数字20个字符的ID
     "model": "kimi",
     "messages": [
         {
