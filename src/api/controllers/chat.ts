@@ -340,7 +340,8 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
     }
 
     const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
-    
+    const inner_model= isK1Model ?"k1":"kimi";
+    logger.info(`使用model: ${inner_model}`);
     // 请求补全流
     const stream = await request('POST', `/api/chat/${convId}/completion/stream`, refreshToken, {
       data: segmentId ? {
@@ -352,6 +353,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       } : {
         kimiplus_id: kimiplusId,
         messages: sendMessages,
+        model:inner_model,
         refs,
         refs_file: refsFile,
         use_math: isMath,
@@ -463,12 +465,14 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
     }
 
     const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
-
+    const inner_model= isK1Model ?"k1":"kimi";
+    logger.info(`使用model: ${inner_model}`);
     // 请求补全流
     const stream = await request('POST', `/api/chat/${convId}/completion/stream`, refreshToken, {
       data: {
         kimiplus_id: kimiplusId,
         messages: sendMessages,
+        model:inner_model,
         refs,
         refs_file: refsFile,
         use_math: isMath,
