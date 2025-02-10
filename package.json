@@ -43,7 +43,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.202",
     "@types/mime": "^3.0.4",
-add    "tsup": "^8.3.6",
+    "tsup": "^8.3.6",
     "typescript": "^5.3.3"
   }
 }

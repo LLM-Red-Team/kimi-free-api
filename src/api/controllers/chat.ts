@@ -339,7 +339,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       logger.info(`探索版当前额度: ${used}/${total}`);
     }
 
-    const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
+    const kimiplusId = isK1Model ? 'kimi' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
     const inner_model= isK1Model ?"k1":"kimi";
     logger.info(`使用model: ${inner_model}`);
     // 请求补全流
@@ -464,7 +464,7 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       logger.info(`探索版当前额度: ${used}/${total}`);
     }
 
-    const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
+    const kimiplusId = isK1Model ? 'kimi' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
     const inner_model= isK1Model ?"k1":"kimi";
     logger.info(`使用model: ${inner_model}`);
     // 请求补全流
@@ -861,6 +861,7 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
       created: util.unixTimestamp()
     };
     let refContent = '';
+    let thinking = false;
     const silentSearch = model.indexOf('silent') != -1;
     const parser = createParser(event => {
       try {
@@ -871,8 +872,22 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
           throw new Error(`Stream response invalid: ${event.data}`);
         // 处理消息
         if (result.event == 'cmpl' && result.text) {
+          if(thinking){
+            data.choices[0].message.content += "\n思考结束\n"
+            thinking = false
+          }
           data.choices[0].message.content += result.text;
         }
+        if (result.event == 'k1' ) {
+          if(!thinking && result.text){
+            data.choices[0].message.content += "开始思考\n"
+            thinking=true
+          }
+          if(result.text)
+            data.choices[0].message.content += result.text;
+        //   if(result.summary)
+        //     data.choices[0].message.content += result.summary;
+        // }
         // 处理请求ID
         else if(result.event == 'req') {
           data.segment_id = result.id;
@@ -935,6 +950,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   // 消息创建时间
   const created = util.unixTimestamp();
   // 创建转换流
+  logger.info('createTransStream start')
   const transStream = new PassThrough();
   let webSearchCount = 0;
   let searchFlag = false;
@@ -953,6 +969,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   })}\n\n`);
   const parser = createParser(event => {
     try {
+      let thinking = false
       if (event.type !== "event") return;
       // 解析JSON
       const result = _.attempt(() => JSON.parse(event.data));
@@ -961,7 +978,40 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
       // 处理消息
       if (result.event == 'cmpl') {
         const exceptCharIndex = result.text.indexOf("�");
-        const chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+        let chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+        logger.info('cmpl'+chunk)
+        if(thinking){
+          chunk = "\n思考完成\n\n" + chunk
+          thinking=false
+        }
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model,
+          object: 'chat.completion.chunk',
+          choices: [
+            { index: 0, delta: { content: (searchFlag ? '\n' : '') + chunk }, finish_reason: null }
+          ],
+          segment_id: segmentId,
+          created
+        })}\n\n`;
+        if (searchFlag)
+          searchFlag = false;
+        !transStream.closed && transStream.write(data);
+      }
+      if (result.event == 'k1') {
+        let chunk= ""
+        if(result.text)
+          {const exceptCharIndex = result.text.indexOf("�");
+          chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+        }
+        // if(result.summary)
+        //   chunk = "# " + result.summary + "\n"
+        logger.info('k1'+chunk)
+        if(!thinking){
+          chunk = "开始思考\n" + chunk
+          thinking=true
+        }
+
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
