@@ -878,7 +878,7 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
           }
           data.choices[0].message.content += result.text;
         }
-        if (result.event == 'k1' ) {
+        if (result.event == 'k1' && result.text) {
           if(!thinking && result.text){
             data.choices[0].message.content += "开始思考\n"
             thinking=true
@@ -908,6 +908,12 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
           webSearchCount += 1;
           refContent += `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n\n`;
         }
+        else if (!silentSearch && result.event == 'k1' && result.search_results) {
+          webSearchCount += 1;
+          refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title}](${result.search_results[0].url})\n\n`;
+         
+        }
+
         // else
         //   logger.warn(result.event, result);
       }
@@ -951,7 +957,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   const created = util.unixTimestamp();
   // 创建转换流
   logger.info('createTransStream start')
-  let thinking = false
+  let thinkingStatus = 0  // 0 未思考 1 思考中 2 思考完成
   const transStream = new PassThrough();
   let webSearchCount = 0;
   let searchFlag = false;
@@ -981,9 +987,9 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         const exceptCharIndex = result.text.indexOf("�");
         let chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
         logger.info('cmpl'+chunk)
-        if(thinking){
+        if(thinkingStatus == 1){
           chunk = "\n思考完成\n\n" + chunk
-          thinking=false
+          thinkingStatus=2
         }
         const data = `data: ${JSON.stringify({
           id: convId,
@@ -999,17 +1005,16 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           searchFlag = false;
         !transStream.closed && transStream.write(data);
       }
-      if (result.event == 'k1') {
+      if (result.event == 'k1' && result.text) {
         let chunk= ""
         if(result.text)
           {const exceptCharIndex = result.text.indexOf("�");
           chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
         }
-
         logger.info('k1'+chunk)
-        if(!thinking){
+        if(thinkingStatus == 0 ){
           chunk = "开始思考\n" + chunk
-          thinking=true
+          thinkingStatus =1 
         }
 
         const data = `data: ${JSON.stringify({
@@ -1026,6 +1031,55 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           searchFlag = false;
         !transStream.closed && transStream.write(data);
       }
+
+
+      if ( result.event == 'k1' && result.summary) {
+        let chunk= ""
+        if(result.summary)
+          {const exceptCharIndex = result.summary.indexOf("�");
+          chunk = "\n\n" + result.summary.substring(0, exceptCharIndex == -1 ? result.summary.length : exceptCharIndex);
+        }
+        logger.info('k1'+chunk)
+        if(thinkingStatus == 2 ){
+          chunk = ''
+        }
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model,
+          object: 'chat.completion.chunk',
+          choices: [
+            { index: 0, delta: { content: (searchFlag ? '\n' : '') + chunk }, finish_reason: null }
+          ],
+          segment_id: segmentId,
+          created
+        })}\n\n`;
+        if (searchFlag)
+          searchFlag = false;
+        !transStream.closed && transStream.write(data);
+      }
+
+
+      if (!silentSearch && result.event == 'k1' && result.search_results) {
+        if (!searchFlag)
+          searchFlag = true;
+        webSearchCount += 1;
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model,
+          object: 'chat.completion.chunk',
+          choices: [
+            {
+              index: 0, delta: {
+                content: `【检索 ${webSearchCount}】 [${result.search_results[0].title}](${result.search_results[0].url})\n`
+              }, finish_reason: null
+            }
+          ],
+          segment_id: segmentId,
+          created
+        })}\n\n`;
+        !transStream.closed && transStream.write(data);
+      }
+
       // 处理请求ID
       else if(result.event == 'req') {
         segmentId = result.id;
