@@ -846,6 +846,7 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
  */
 async function receiveStream(model: string, convId: string, stream: any): Promise<IStreamMessage> {
   let webSearchCount = 0;
+  let searchResult = [];
   let temp = Buffer.from('');
   return new Promise((resolve, reject) => {
     // 消息初始化
@@ -876,7 +877,20 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
             data.choices[0].message.content += "\n思考结束\n"
             thinking = false
           }
-          data.choices[0].message.content += result.text;
+          let chunk = result.text
+          const regex = /\[\^(\d+)\^\]/g;
+    
+          chunk= chunk.replace(regex, (match, capturedNumber) => {
+            const extractedNumber = parseInt(capturedNumber, 10);
+            if (extractedNumber >= 0 && extractedNumber < searchResult.length) {
+                const content = searchResult[extractedNumber].url;
+  
+                return `[[${extractedNumber}]](${content})`;
+            } else {
+                return match; // 如果索引超出范围，保持原样
+            }
+        });
+          data.choices[0].message.content += chunk;
         }
         if (result.event == 'k1' && result.text) {
           if(!thinking && result.text){
@@ -906,10 +920,12 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
         // 处理联网搜索
         else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
           webSearchCount += 1;
+          searchResult.push(result.msg);
           refContent += `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n\n`;
         }
         else if (!silentSearch && result.event == 'k1' && result.search_results) {
           webSearchCount += 1;
+          searchResult.push(result.search_results[0]);
           refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title}](${result.search_results[0].url})\n\n`;
          
         }
@@ -960,6 +976,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   let thinkingStatus = 0  // 0 未思考 1 思考中 2 思考完成
   const transStream = new PassThrough();
   let webSearchCount = 0;
+  let searchResult = [];
   let searchFlag = false;
   let lengthExceed = false;
   let segmentId = '';
@@ -991,6 +1008,20 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           chunk = "\n思考完成\n\n" + chunk
           thinkingStatus=2
         }
+
+        const regex = /\[\^(\d+)\^\]/g;
+    
+        chunk= chunk.replace(regex, (match, capturedNumber) => {
+          const extractedNumber = parseInt(capturedNumber, 10);
+          if (extractedNumber >= 0 && extractedNumber < searchResult.length) {
+              const content = searchResult[extractedNumber].url;
+
+              return `[[${extractedNumber}]](${content})`;
+          } else {
+              return match; // 如果索引超出范围，保持原样
+          }
+      });
+
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
@@ -1007,10 +1038,10 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
       }
       if (result.event == 'k1' && result.text) {
         let chunk= ""
-        if(result.text)
-          {const exceptCharIndex = result.text.indexOf("�");
+
+          const exceptCharIndex = result.text.indexOf("�");
           chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
-        }
+
         logger.info('k1'+chunk)
         if(thinkingStatus == 0 ){
           chunk = "开始思考\n" + chunk
@@ -1037,7 +1068,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         let chunk= ""
         if(result.summary)
           {const exceptCharIndex = result.summary.indexOf("�");
-          chunk = "\n\n" + result.summary.substring(0, exceptCharIndex == -1 ? result.summary.length : exceptCharIndex);
+          chunk = "\n\n" + result.summary.substring(0, exceptCharIndex == -1 ? result.summary.length : exceptCharIndex)+"\n\n";
         }
         logger.info('k1'+chunk)
         if(thinkingStatus == 2 ){
@@ -1063,6 +1094,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         if (!searchFlag)
           searchFlag = true;
         webSearchCount += 1;
+        searchResult.push(result.search_results[0]);
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
@@ -1114,6 +1146,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         if (!searchFlag)
           searchFlag = true;
         webSearchCount += 1;
+        searchResult.push(result.msg);
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
