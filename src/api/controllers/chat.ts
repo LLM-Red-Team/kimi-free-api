@@ -951,6 +951,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   const created = util.unixTimestamp();
   // 创建转换流
   logger.info('createTransStream start')
+  let thinking = false
   const transStream = new PassThrough();
   let webSearchCount = 0;
   let searchFlag = false;
@@ -969,7 +970,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   })}\n\n`);
   const parser = createParser(event => {
     try {
-      let thinking = false
+      
       if (event.type !== "event") return;
       // 解析JSON
       const result = _.attempt(() => JSON.parse(event.data));
