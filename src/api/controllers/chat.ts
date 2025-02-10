@@ -887,7 +887,7 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
             data.choices[0].message.content += result.text;
         //   if(result.summary)
         //     data.choices[0].message.content += result.summary;
-        // }
+        }
         // 处理请求ID
         else if(result.event == 'req') {
           data.segment_id = result.id;
@@ -1004,8 +1004,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           {const exceptCharIndex = result.text.indexOf("�");
           chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
         }
-        // if(result.summary)
-        //   chunk = "# " + result.summary + "\n"
+
         logger.info('k1'+chunk)
         if(!thinking){
           chunk = "开始思考\n" + chunk
