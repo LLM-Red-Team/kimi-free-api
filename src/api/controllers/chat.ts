@@ -883,13 +883,13 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
           chunk= chunk.replace(regex, (match, capturedNumber) => {
             const extractedNumber = parseInt(capturedNumber, 10);
             if (extractedNumber >= 0 && extractedNumber < searchResult.length) {
-                const content = searchResult[extractedNumber].url;
+                const content = searchResult[extractedNumber-1].url;
   
                 return `[[${extractedNumber}]](${content})`;
             } else {
                 return match; // 如果索引超出范围，保持原样
             }
-        });
+          });
           data.choices[0].message.content += chunk;
         }
         if (result.event == 'k1' && result.text) {
@@ -1014,7 +1014,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         chunk= chunk.replace(regex, (match, capturedNumber) => {
           const extractedNumber = parseInt(capturedNumber, 10);
           if (extractedNumber >= 0 && extractedNumber < searchResult.length) {
-              const content = searchResult[extractedNumber].url;
+              const content = searchResult[extractedNumber-1].url;
 
               return `[[${extractedNumber}]](${content})`;
           } else {
