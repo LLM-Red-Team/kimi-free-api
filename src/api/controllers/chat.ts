@@ -1011,16 +1011,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
 
         const regex = /\[\^(\d+)\^\]/g;
     
-        chunk= chunk.replace(regex, (match, capturedNumber) => {
-          const extractedNumber = parseInt(capturedNumber, 10);
-          if (extractedNumber >= 0 && extractedNumber < searchResult.length) {
-              const content = searchResult[extractedNumber-1].url;
-
-              return `[[${extractedNumber}]](${content})`;
-          } else {
-              return match; // 如果索引超出范围，保持原样
-          }
-      });
+        chunk= chunk.replace(regex, '');
 
         const data = `data: ${JSON.stringify({
           id: convId,
