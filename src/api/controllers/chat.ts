@@ -921,12 +921,14 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
         else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
           webSearchCount += 1;
           searchResult.push(result.msg);
-          refContent += `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n\n`;
+          const encodedUrl = encodeURI(result.msg.url);
+          refContent += `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
         }
         else if (!silentSearch && result.event == 'k1' && result.search_results) {
           webSearchCount += 1;
           searchResult.push(result.search_results[0]);
-          refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title}](${result.search_results[0].url})\n\n`;
+          const encodedUrl = encodeURI(result.search_results[0].url);
+          refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
          
         }
 
@@ -1085,6 +1087,8 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         if (!searchFlag)
           searchFlag = true;
         webSearchCount += 1;
+        
+        const encodedUrl = encodeURI(result.search_results[0].url);
         searchResult.push(result.search_results[0]);
         const data = `data: ${JSON.stringify({
           id: convId,
@@ -1093,7 +1097,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             {
               index: 0, delta: {
-                content: `【检索 ${webSearchCount}】 [${result.search_results[0].title}](${result.search_results[0].url})\n`
+                content: `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n`
               }, finish_reason: null
             }
           ],
@@ -1137,6 +1141,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         if (!searchFlag)
           searchFlag = true;
         webSearchCount += 1;
+        const encodedUrl = encodeURI(result.msg.url);
         searchResult.push(result.msg);
         const data = `data: ${JSON.stringify({
           id: convId,
@@ -1145,7 +1150,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             {
               index: 0, delta: {
-                content: `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n`
+                content: `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n`
               }, finish_reason: null
             }
           ],
