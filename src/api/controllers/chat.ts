@@ -339,8 +339,9 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       logger.info(`探索版当前额度: ${used}/${total}`);
     }
 
-    const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
-    
+    const kimiplusId = isK1Model ? 'kimi' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
+    const inner_model= isK1Model ?"k1":"kimi";
+    logger.info(`使用model: ${inner_model}`);
     // 请求补全流
     const stream = await request('POST', `/api/chat/${convId}/completion/stream`, refreshToken, {
       data: segmentId ? {
@@ -352,6 +353,7 @@ async function createCompletion(model = MODEL_NAME, messages: any[], refreshToke
       } : {
         kimiplus_id: kimiplusId,
         messages: sendMessages,
+        model:inner_model,
         refs,
         refs_file: refsFile,
         use_math: isMath,
@@ -462,13 +464,15 @@ async function createCompletionStream(model = MODEL_NAME, messages: any[], refre
       logger.info(`探索版当前额度: ${used}/${total}`);
     }
 
-    const kimiplusId = isK1Model ? 'crm40ee9e5jvhsn7ptcg' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
-
+    const kimiplusId = isK1Model ? 'kimi' : (/^[0-9a-z]{20}$/.test(model) ? model : 'kimi');
+    const inner_model= isK1Model ?"k1":"kimi";
+    logger.info(`使用model: ${inner_model}`);
     // 请求补全流
     const stream = await request('POST', `/api/chat/${convId}/completion/stream`, refreshToken, {
       data: {
         kimiplus_id: kimiplusId,
         messages: sendMessages,
+        model:inner_model,
         refs,
         refs_file: refsFile,
         use_math: isMath,
@@ -842,6 +846,7 @@ function checkResult(result: AxiosResponse, refreshToken: string) {
  */
 async function receiveStream(model: string, convId: string, stream: any): Promise<IStreamMessage> {
   let webSearchCount = 0;
+  let searchResult = [];
   let temp = Buffer.from('');
   return new Promise((resolve, reject) => {
     // 消息初始化
@@ -857,6 +862,7 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
       created: util.unixTimestamp()
     };
     let refContent = '';
+    let thinking = false;
     const silentSearch = model.indexOf('silent') != -1;
     const parser = createParser(event => {
       try {
@@ -867,7 +873,34 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
           throw new Error(`Stream response invalid: ${event.data}`);
         // 处理消息
         if (result.event == 'cmpl' && result.text) {
-          data.choices[0].message.content += result.text;
+          if(thinking){
+            data.choices[0].message.content += "\n思考结束\n"
+            thinking = false
+          }
+          let chunk = result.text
+          const regex = /\[\^(\d+)\^\]/g;
+    
+          chunk= chunk.replace(regex, (match, capturedNumber) => {
+            const extractedNumber = parseInt(capturedNumber, 10);
+            if (extractedNumber >= 0 && extractedNumber < searchResult.length) {
+                const content = searchResult[extractedNumber-1].url;
+  
+                return `[[${extractedNumber}]](${content})`;
+            } else {
+                return match; // 如果索引超出范围，保持原样
+            }
+          });
+          data.choices[0].message.content += chunk;
+        }
+        if (result.event == 'k1' && result.text) {
+          if(!thinking && result.text){
+            data.choices[0].message.content += "开始思考\n"
+            thinking=true
+          }
+          if(result.text)
+            data.choices[0].message.content += result.text;
+        //   if(result.summary)
+        //     data.choices[0].message.content += result.summary;
         }
         // 处理请求ID
         else if(result.event == 'req') {
@@ -887,8 +920,18 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
         // 处理联网搜索
         else if (!silentSearch && result.event == 'search_plus' && result.msg && result.msg.type == 'get_res') {
           webSearchCount += 1;
-          refContent += `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n\n`;
+          searchResult.push(result.msg);
+          const encodedUrl = encodeURI(result.msg.url);
+          refContent += `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
         }
+        else if (!silentSearch && result.event == 'k1' && result.search_results) {
+          webSearchCount += 1;
+          searchResult.push(result.search_results[0]);
+          const encodedUrl = encodeURI(result.search_results[0].url);
+          refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
+         
+        }
+
         // else
         //   logger.warn(result.event, result);
       }
@@ -931,8 +974,11 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   // 消息创建时间
   const created = util.unixTimestamp();
   // 创建转换流
+  logger.info('createTransStream start')
+  let thinkingStatus = 0  // 0 未思考 1 思考中 2 思考完成
   const transStream = new PassThrough();
   let webSearchCount = 0;
+  let searchResult = [];
   let searchFlag = false;
   let lengthExceed = false;
   let segmentId = '';
@@ -949,6 +995,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
   })}\n\n`);
   const parser = createParser(event => {
     try {
+      
       if (event.type !== "event") return;
       // 解析JSON
       const result = _.attempt(() => JSON.parse(event.data));
@@ -957,7 +1004,17 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
       // 处理消息
       if (result.event == 'cmpl') {
         const exceptCharIndex = result.text.indexOf("�");
-        const chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+        let chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+        logger.info('cmpl'+chunk)
+        if(thinkingStatus == 1){
+          chunk = "\n思考完成\n\n" + chunk
+          thinkingStatus=2
+        }
+
+        const regex = /\[\^(\d+)\^\]/g;
+    
+        chunk= chunk.replace(regex, '');
+
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
@@ -972,6 +1029,84 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           searchFlag = false;
         !transStream.closed && transStream.write(data);
       }
+      if (result.event == 'k1' && result.text) {
+        let chunk= ""
+
+          const exceptCharIndex = result.text.indexOf("�");
+          chunk = result.text.substring(0, exceptCharIndex == -1 ? result.text.length : exceptCharIndex);
+
+        logger.info('k1'+chunk)
+        if(thinkingStatus == 0 ){
+          chunk = "开始思考\n" + chunk
+          thinkingStatus =1 
+        }
+
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model,
+          object: 'chat.completion.chunk',
+          choices: [
+            { index: 0, delta: { content: (searchFlag ? '\n' : '') + chunk }, finish_reason: null }
+          ],
+          segment_id: segmentId,
+          created
+        })}\n\n`;
+        if (searchFlag)
+          searchFlag = false;
+        !transStream.closed && transStream.write(data);
+      }
+
+
+      if ( result.event == 'k1' && result.summary) {
+        let chunk= ""
+        if(result.summary)
+          {const exceptCharIndex = result.summary.indexOf("�");
+          chunk = "\n\n" + result.summary.substring(0, exceptCharIndex == -1 ? result.summary.length : exceptCharIndex)+"\n\n";
+        }
+        logger.info('k1'+chunk)
+        if(thinkingStatus == 2 ){
+          chunk = ''
+        }
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model,
+          object: 'chat.completion.chunk',
+          choices: [
+            { index: 0, delta: { content: (searchFlag ? '\n' : '') + chunk }, finish_reason: null }
+          ],
+          segment_id: segmentId,
+          created
+        })}\n\n`;
+        if (searchFlag)
+          searchFlag = false;
+        !transStream.closed && transStream.write(data);
+      }
+
+
+      if (!silentSearch && result.event == 'k1' && result.search_results) {
+        if (!searchFlag)
+          searchFlag = true;
+        webSearchCount += 1;
+        
+        const encodedUrl = encodeURI(result.search_results[0].url);
+        searchResult.push(result.search_results[0]);
+        const data = `data: ${JSON.stringify({
+          id: convId,
+          model,
+          object: 'chat.completion.chunk',
+          choices: [
+            {
+              index: 0, delta: {
+                content: `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n`
+              }, finish_reason: null
+            }
+          ],
+          segment_id: segmentId,
+          created
+        })}\n\n`;
+        !transStream.closed && transStream.write(data);
+      }
+
       // 处理请求ID
       else if(result.event == 'req') {
         segmentId = result.id;
@@ -1006,6 +1141,8 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
         if (!searchFlag)
           searchFlag = true;
         webSearchCount += 1;
+        const encodedUrl = encodeURI(result.msg.url);
+        searchResult.push(result.msg);
         const data = `data: ${JSON.stringify({
           id: convId,
           model,
@@ -1013,7 +1150,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             {
               index: 0, delta: {
-                content: `【检索 ${webSearchCount}】 [${result.msg.title}](${result.msg.url})\n`
+                content: `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n`
               }, finish_reason: null
             }
           ],
