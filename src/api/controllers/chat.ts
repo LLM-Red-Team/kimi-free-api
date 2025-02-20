@@ -922,13 +922,13 @@ async function receiveStream(model: string, convId: string, stream: any): Promis
           webSearchCount += 1;
           searchResult.push(result.msg);
           const encodedUrl = encodeURI(result.msg.url);
-          refContent += `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
+          refContent += `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
         }
         else if (!silentSearch && result.event == 'k1' && result.search_results) {
           webSearchCount += 1;
           searchResult.push(result.search_results[0]);
           const encodedUrl = encodeURI(result.search_results[0].url);
-          refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
+          refContent += `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n\n`;
          
         }
 
@@ -1097,7 +1097,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             {
               index: 0, delta: {
-                content: `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n`
+                content: `【检索 ${webSearchCount}】 [${result.search_results[0].title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n`
               }, finish_reason: null
             }
           ],
@@ -1150,7 +1150,7 @@ function createTransStream(model: string, convId: string, stream: any, endCallba
           choices: [
             {
               index: 0, delta: {
-                content: `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+-.!]/g, '\\$&')}](${encodedUrl})\n`
+                content: `【检索 ${webSearchCount}】 [${result.msg.title.replace(/[\\`*_{}[\]()#+$-.!]/g, '\\$&')}](${encodedUrl})\n`
               }, finish_reason: null
             }
           ],
